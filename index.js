@@ -244,11 +244,6 @@ function verifyWebhookSignature(req, res, next) {
  }
 }
 
-app.get('/', (req, res) => {
- console.log('Health check received');
- res.status(200).send('Bot is running');
-});
-
 app.post('/', verifyWebhookSignature, async (req, res) => {
  console.log('Webhook received:', JSON.stringify(req.body, null, 2));
  try {
