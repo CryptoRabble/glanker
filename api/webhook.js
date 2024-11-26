@@ -189,11 +189,6 @@ export default async function handler(req, res) {
     return res.status(200).json({ status: 'Bot is running' });
   }
 
-  // Test endpoint to verify webhook is reaching the server
-  if (req.method === 'POST' && req.url === '/api/webhook/test') {
-    console.log('Test endpoint hit');
-    return res.status(200).json({ status: 'Test successful' });
-  }
 
   if (req.method === 'POST') {
     const signature = req.headers['x-neynar-signature'];
