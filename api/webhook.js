@@ -1,9 +1,9 @@
-const { AirstackClient } = require('@airstack/node');
-const { NeynarAPIClient } = require('@neynar/nodejs-sdk');
-const { Anthropic } = require('@anthropic-ai/sdk');
-const axios = require('axios');
-const FormData = require('form-data');
-const crypto = require('crypto');
+import { AirstackClient } from '@airstack/node';
+import { NeynarAPIClient } from '@neynar/nodejs-sdk';
+import { Anthropic } from '@anthropic-ai/sdk';
+import axios from 'axios';
+import FormData from 'form-data';
+import crypto from 'crypto';
 
 // Initialize clients
 const airstack = new AirstackClient(process.env.AIRSTACK_API_KEY);
@@ -179,7 +179,7 @@ async function createCastWithReply(replyToHash, message) {
  );
 }
 
-module.exports = async function handler(req, res) {
+export default async function handler(req, res) {
  console.log('Request received:', req.method);
  console.log('Headers:', req.headers);
  console.log('Body:', req.body);
@@ -222,9 +222,9 @@ module.exports = async function handler(req, res) {
  }
 
  return res.status(405).json({ error: 'Method not allowed' });
-};
+}
 
-module.exports.config = {
+export const config = {
  api: {
    bodyParser: true,
  },
