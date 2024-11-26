@@ -235,6 +235,14 @@ app.get('/', (req, res) => {
  res.status(200).send('Bot is running');
 });
 
+app.post('/test', (req, res) => {
+    console.log('Test endpoint hit');
+    console.log('Headers:', req.headers);
+    console.log('Body:', req.body);
+    // Don't verify signature for test
+    res.status(200).send('Test successful');
+  });
+
 // Webhook endpoint
 app.post('/webhook', async (req, res) => {
  console.log('Headers:', req.headers);
