@@ -5,8 +5,11 @@ const axios = require('axios');
 const FormData = require('form-data');
 const NodeCache = require('node-cache');
 
+
 // Initialize clients and cache
 const airstack = new AirstackClient(process.env.AIRSTACK_API_KEY);
+const crypto = require('crypto');
+const WEBHOOK_SECRET = 'kDsKrepcx6b2FQM0DxOVBBexv'; // The secret you set in Neynar
 const neynar = new NeynarAPIClient(process.env.NEYNAR_API_KEY);
 const PINTEREST_ACCESS_TOKEN = process.env.PINTEREST_API_KEY;
 const anthropic = new Anthropic({
@@ -191,19 +194,42 @@ app.get('/', (req, res) => {
     res.status(200).send('Bot is running');
   });
 
-app.post('/webhook', async (req, res) => {
-    console.log('Webhook received:', req.body); // Add this
+// Webhook verification middleware
+function verifyWebhookSignature(req, res, next) {
+    const signature = req.headers['x-neynar-signature'];
+    const body = JSON.stringify(req.body);
+    
+    const hmac = crypto
+      .createHmac('sha256', WEBHOOK_SECRET)
+      .update(body)
+      .digest('hex');
+      
+    if (signature === hmac) {
+      next();
+    } else {
+      res.status(401).send('Invalid signature');
+    }
+  }
+  
+  app.post('/webhook', verifyWebhookSignature, async (req, res) => {
+    console.log('Webhook received:', JSON.stringify(req.body, null, 2));
     try {
-      const { username, castHash } = req.body;
-      console.log('Processing mention from:', username); // Add this
-      await handleMention(username, castHash);
-      console.log('Successfully processed mention'); // Add this
+      const eventData = req.body;
+      // Log the full event data
+      console.log('Event data:', eventData);
+      
+      if (eventData.type === 'cast.created') {
+        const username = eventData.data.username;
+        const castHash = eventData.data.hash;
+        console.log('Processing mention from:', username);
+        await handleMention(username, castHash);
+      }
+      
       res.status(200).send('Success');
     } catch (error) {
-      console.error('Error:', error); // Make sure this exists
-      res.status(500).send('Error processing request');
+      console.error('Error:', error);
+      res.status(500).send('Error processing webhook');
     }
   });
-
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
