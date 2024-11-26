@@ -187,15 +187,18 @@ const app = express();
 app.use(express.json());
 
 app.post('/webhook', async (req, res) => {
-  try {
-    const { username, castHash } = req.body;
-    await handleMention(username, castHash);
-    res.status(200).send('Success');
-  } catch (error) {
-    console.error('Error:', error);
-    res.status(500).send('Error processing request');
-  }
-});
+    console.log('Webhook received:', req.body); // Add this
+    try {
+      const { username, castHash } = req.body;
+      console.log('Processing mention from:', username); // Add this
+      await handleMention(username, castHash);
+      console.log('Successfully processed mention'); // Add this
+      res.status(200).send('Success');
+    } catch (error) {
+      console.error('Error:', error); // Make sure this exists
+      res.status(500).send('Error processing request');
+    }
+  });
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
