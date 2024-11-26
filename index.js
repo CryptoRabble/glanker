@@ -10,12 +10,13 @@ const crypto = require('crypto');
 // Initialize clients and cache
 const airstack = new AirstackClient(process.env.AIRSTACK_API_KEY);
 const neynar = new NeynarAPIClient(process.env.NEYNAR_API_KEY);
-const WEBHOOK_SECRET = 'kDsKrepcx6b2FQM0DxOVBBexv';
+const WEBHOOK_SECRET = process.env.WEBHOOK_SECRET;
 const PINTEREST_ACCESS_TOKEN = process.env.PINTEREST_API_KEY;
 const anthropic = new Anthropic({
  apiKey: process.env.ANTHROPIC_API_KEY
 });
 const SIGNER_UUID = process.env.SIGNER_UUID;
+const BOT_FID = process.env.BOT_FID;
 const tokenCache = new NodeCache();
 
 async function handleMention(fid, replyToHash) {
@@ -228,38 +229,53 @@ async function createCastWithReply(replyToHash, message) {
 const app = express();
 app.use(express.json());
 
-function verifyWebhookSignature(req, res, next) {
+// Health check endpoint
+app.get('/', (req, res) => {
+ console.log('Health check hit');
+ res.status(200).send('Bot is running');
+});
+
+// Webhook endpoint
+app.post('/webhook', async (req, res) => {
+ console.log('Headers:', req.headers);
+ console.log('Raw body:', req.body);
+
  const signature = req.headers['x-neynar-signature'];
  const body = JSON.stringify(req.body);
  
+ if (!signature) {
+   console.error('Missing Neynar signature');
+   return res.status(401).send('Missing signature');
+ }
+
  const hmac = crypto
-   .createHmac('sha256', WEBHOOK_SECRET)
+   .createHmac('sha512', WEBHOOK_SECRET)
    .update(body)
    .digest('hex');
-   
- if (signature === hmac) {
-   next();
- } else {
-   res.status(401).send('Invalid signature');
- }
-}
 
-app.post('/', verifyWebhookSignature, async (req, res) => {
- console.log('Webhook received:', JSON.stringify(req.body, null, 2));
+ if (signature !== hmac) {
+   console.error('Invalid signature');
+   return res.status(401).send('Invalid signature');
+ }
+
  try {
-   const eventData = req.body;
-   console.log('Event data:', eventData);
-   
-   if (eventData.type === 'cast.created') {
-     const fid = eventData.data.fid;
-     const castHash = eventData.data.hash;
-     console.log('Processing mention from FID:', fid);
-     await handleMention(fid, castHash);
+   const hookData = JSON.parse(body);
+   console.log('Webhook data:', hookData);
+
+   // Check for mentions
+   if (hookData.type === 'cast.created' && 
+       hookData.data.mentioned_profiles?.some(profile => profile.fid === BOT_FID)) {
+     
+     const authorFid = hookData.data.author.fid;
+     const castHash = hookData.data.hash;
+     
+     console.log('Processing mention:', { authorFid, castHash });
+     await handleMention(authorFid, castHash);
    }
-   
+
    res.status(200).send('Success');
  } catch (error) {
-   console.error('Webhook processing error:', error);
+   console.error('Error processing webhook:', error);
    res.status(500).send('Error processing webhook');
  }
 });
