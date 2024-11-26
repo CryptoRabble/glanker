@@ -6,14 +6,13 @@ const FormData = require('form-data');
 const NodeCache = require('node-cache');
 
 // Initialize clients and cache
-const airstack = new AirstackClient('AIRSTACK_API_KEY');
-const neynar = new NeynarAPIClient('NEYNAR_API_KEY');
-const IMGUR_CLIENT_ID = 'YOUR_IMGUR_CLIENT_ID';
+const airstack = new AirstackClient(process.env.AIRSTACK_API_KEY);
+const neynar = new NeynarAPIClient(process.env.NEYNAR_API_KEY);
+const PINTEREST_ACCESS_TOKEN = process.env.PINTEREST_API_KEY;
 const anthropic = new Anthropic({
-  apiKey: 'ANTHROPIC_API_KEY'
+  apiKey: process.env.ANTHROPIC_API_KEY
 });
-const UNSPLASH_ACCESS_KEY = 'UNSPLASH_KEY';
-const SIGNER_UUID = 'SIGNER_UUID';
+const SIGNER_UUID = process.env.SIGNER_UUID;
 const tokenCache = new NodeCache();
 
 async function handleMention(username, replyToHash) {
@@ -95,33 +94,48 @@ async function generateTokenDetails(posts) {
 // Rest of the code remains the same
 async function findRelevantImage(tokenName) {
     try {
-      const response = await axios.get('https://api.imgur.com/3/gallery/search', {
-        headers: { 
-          Authorization: `Client-ID ${IMGUR_CLIENT_ID}`
-        },
-        params: {
-          q: tokenName,
-          q_type: 'jpg|png'
+      const response = await axios.get(
+        'https://api.pinterest.com/v5/pins/search',
+        {
+          params: {
+            query: tokenName,  // Just using the token name
+            page_size: 10,
+            media_type: 'image'
+          },
+          headers: {
+            'Authorization': `Bearer ${PINTEREST_ACCESS_TOKEN}`
+          }
         }
-      });
-      
-      // Filter for non-animated images
-      const images = response.data.data.filter(item => 
-        !item.is_album && 
-        !item.animated && 
-        !item.nsfw && 
-        item.type && 
-        (item.type.endsWith('/jpeg') || item.type.endsWith('/png'))
       );
-  
-      // Get random image from first 10 results (or less if fewer results)
-      const maxIndex = Math.min(images.length, 10);
-      const randomIndex = Math.floor(Math.random() * maxIndex);
-      return images[randomIndex].link;
+
+      // Add error checking for response structure
+      if (!response.data || !response.data.items || response.data.items.length === 0) {
+        throw new Error('No Pinterest results found');
+      }
+
+      // Filter valid images and handle different response structures
+      const images = response.data.items.filter(item => {
+        return item.media && 
+               ((item.media.images && item.media.images.original) || 
+                (item.image && item.image.original));
+      });
+
+      if (images.length === 0) {
+        throw new Error('No suitable images found');
+      }
+
+      const randomImage = images[Math.floor(Math.random() * images.length)];
+      const imageUrl = randomImage.media?.images?.original?.url || 
+                      randomImage.image?.original?.url;
+
+      if (!imageUrl) {
+        throw new Error('Invalid image URL structure');
+      }
+
+      return imageUrl;
     } catch (error) {
-      console.error('Imgur API error:', error);
-      // Fallback to a default image if Imgur fails
-      return 'DEFAULT_IMAGE_URL';
+      console.error('Pinterest API error:', error);
+      return 'https://your-actual-fallback-image-url.jpg';
     }
   }
 
