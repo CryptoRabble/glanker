@@ -186,6 +186,11 @@ const express = require('express');
 const app = express();
 app.use(express.json());
 
+app.get('/', (req, res) => {
+    console.log('Root path hit');
+    res.status(200).send('Bot is running');
+  });
+
 app.post('/webhook', async (req, res) => {
     console.log('Webhook received:', req.body); // Add this
     try {
