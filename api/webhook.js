@@ -30,7 +30,7 @@ async function checkUserScore(fid) {
     const userScore = response.users?.[0]?.experimental?.neynar_user_score || 0;
     
     console.log('User score for FID:', fid, 'Score:', userScore);
-    return userScore >= 0.10;
+    return userScore >= 0.75;
   } catch (error) {
     console.error('Error checking user score:', error);
     return false;
@@ -88,7 +88,7 @@ async function handleMention(fid, replyToHash, castText) {
 
  tokenCache.set(fid, { lastGenerated: now });
 
- const message = `${userResponse}@clanker, create this token:\nName: ${tokenDetails.name}\nTicker: ${tokenDetails.ticker}`;
+ const message = `${userResponse}@bogusbob, create this token:\nName: ${tokenDetails.name}\nTicker: ${tokenDetails.ticker}`;
  await createCastWithReply(replyToHash, message, imageResult.url);
 }
 
