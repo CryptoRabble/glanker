@@ -153,7 +153,7 @@ async function findRelevantImage(tokenName) {
 
    return validImages[Math.floor(Math.random() * validImages.length)];
  } catch (error) {
-   return 'https://imagedelivery.net/BXluQx4ige9GuW0Ia56BHw/36b28dd1-3616-4205-2869-0f07ec467200/original';
+   return 'https://i.pinimg.com/736x/9a/46/63/9a4663595d853c2e950a4bfb9a3a8772.jpg';
  }
 }
 
