@@ -2,7 +2,6 @@ import { init, fetchQuery } from "@airstack/node";
 import { NeynarAPIClient, Configuration } from "@neynar/nodejs-sdk";
 import { Anthropic } from '@anthropic-ai/sdk';
 import axios from 'axios';
-import FormData from 'form-data';
 import crypto from 'crypto';
 
 // Initialize clients
@@ -42,15 +41,13 @@ async function handleMention(fid, replyToHash) {
  const analysis = await analyzeCasts(fid);
  const tokenDetails = await generateTokenDetails(analysis);
  const imageUrl = await findRelevantImage(tokenDetails.name);
- const imageBuffer = await downloadImage(imageUrl);
- const uploadedImageUrl = await uploadImageToFarcaster(imageBuffer);
 
  tokenCache.set(fid, { lastGenerated: now });
 
  await createCastWithImage(
    tokenDetails.name,
    tokenDetails.ticker,
-   uploadedImageUrl,
+   imageUrl,
    replyToHash
  );
 }
@@ -162,34 +159,6 @@ async function findRelevantImage(tokenName) {
  } catch (error) {
    return 'https://imagedelivery.net/BXluQx4ige9GuW0Ia56BHw/36b28dd1-3616-4205-2869-0f07ec467200/original';
  }
-}
-
-async function downloadImage(imageUrl) {
- const response = await axios.get(imageUrl, { responseType: 'arraybuffer' });
- return Buffer.from(response.data);
-}
-
-async function uploadImageToFarcaster(imageBuffer) {
-  try {
-    const formData = new FormData();
-    formData.append('file', imageBuffer, {
-      filename: 'token-image.jpg',
-      contentType: 'image/jpeg',
-    });
-
-    // Correct method for Neynar v2
-    const response = await neynar.uploadMedia({
-      signer_uuid: process.env.SIGNER_UUID,
-      content_type: "image/jpeg",
-      file: formData
-    });
-    
-    console.log('Image upload response:', response);
-    return response.url;
-  } catch (error) {
-    console.error('Farcaster upload error:', error);
-    throw error;
-  }
 }
 
 async function createCastWithReply(replyToHash, message) {
