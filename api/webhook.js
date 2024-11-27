@@ -86,36 +86,49 @@ async function analyzeCasts(fid) {
 }
 
 async function generateTokenDetails(posts) {
- const combinedContent = posts.map(p => p.text).join(' ');
- 
- const message = await anthropic.messages.create({
-   model: "claude-3-sonnet-20240229",
-   max_tokens: 100,
-   messages: [{
-     role: "user",
-     content: `You are an expert at creating a memecoin based on a user's posts on Warpcast. You will assist me in doing so.
-     Generate a memecoin based on these posts. You should take all posts into consideration and create an general idea for yourself on the personality of the person on which you base the memecoin:
-     User's posts: ${combinedContent}
+  const combinedContent = posts.map(p => p.text).join(' ');
+  
+  try {
+    const message = await anthropic.messages.create({
+      model: "claude-3-sonnet-20240229",
+      max_tokens: 100,
+      messages: [{
+        role: "user",
+        content: `You are an expert at creating a memecoin based on a user's posts on Warpcast. You will assist me in doing so.
+        Generate a memecoin based on these posts. You should take all posts into consideration and create an general idea for yourself on the personality of the person on which you base the memecoin:
+        User's posts: ${combinedContent}
 
-     Please provide a memecoin token name and ticker in this exact format:
-     NAME
-     TICKER
+        Please provide a memecoin token name and ticker in this exact format:
+        NAME
+        TICKER
 
-     Rules: 
-     - Output ONLY the name on first line and ticker on second line. Nothing more.
-     - Do not use these words in any part of the output: Degen, wild, clanker, base, based, glonk, glonky bot, simple, roast, dog, invest, buy, purchase, frames, quirky, meme, milo, memecoin, Doge, Pepe, scene, scenecoin, launguage, name, farther, higher, bleu, moxie, warpcast, farcaster.
-     - Use only the english alphabet
-     - Do not use the letters 'Q', 'X', and 'Z' too much
-     - Do not use any existing popular memecoin names in the output
-     - The name should be a real word`
-   }]
- });
+        Rules: 
+        - Output ONLY the name on first line and ticker on second line. Nothing more.
+        - Do not use these words in any part of the output: Degen, wild, clanker, base, based, glonk, glonky bot, simple, roast, dog, invest, buy, purchase, frames, quirky, meme, milo, memecoin, Doge, Pepe, scene, scenecoin, launguage, name, farther, higher, bleu, moxie, warpcast, farcaster.
+        - Use only the english alphabet
+        - Do not use the letters 'Q', 'X', and 'Z' too much
+        - Do not use any existing popular memecoin names in the output
+        - The name should be a real word`
+      }]
+    });
 
- const lines = message.content.split('\n').filter(line => line.trim());
- return {
-   name: lines[0].trim(),
-   ticker: lines[1].trim()
- };
+    // Updated to use the correct response format
+    console.log('Claude response:', message);
+    const lines = message.content[0].text.split('\n').filter(line => line.trim());
+    
+    if (lines.length < 2) {
+      throw new Error('Invalid AI response format');
+    }
+
+    return {
+      name: lines[0].trim(),
+      ticker: lines[1].trim()
+    };
+  } catch (error) {
+    console.error('Token generation error:', error);
+    console.error('Full response:', message);
+    throw error;
+  }
 }
 
 async function findRelevantImage(tokenName) {
