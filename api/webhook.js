@@ -59,7 +59,9 @@ async function handleMention(fid, replyToHash, castText) {
  // Check user score before proceeding
  const hasValidScore = await checkUserScore(fid);
  if (!hasValidScore) {
-   await createCastWithReply(replyToHash, `${userResponse}\n\nSorry fren, you need a higher Neynar score to create tokens.\n\nhttps://warpcast.com/rish/0x458f80e4`);
+   await createCastWithReply(replyToHash, `${userResponse}\n\nSorry fren, you need a higher Neynar score to create tokens`, 
+    "https://warpcast.com/rish/0x458f80e4"
+  );
    return;
  }
 
