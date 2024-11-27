@@ -221,13 +221,22 @@ export default async function handler(req, res) {
    }
 
    try {
-     if (req.body.type === 'cast.created' && 
-         req.body.data.mentioned_profiles?.some(profile => profile.fid === process.env.BOT_FID)) {
-       
-       const authorFid = req.body.data.author.fid;
-       const castHash = req.body.data.hash;
-       
-       await handleMention(authorFid, castHash);
+     if (req.body.type === 'cast.created') {
+       console.log('Mentioned profiles:', req.body.data.mentioned_profiles);
+       console.log('Bot FID:', process.env.BOT_FID);
+       console.log('Author FID:', req.body.data.author.fid);
+
+       if (req.body.data.mentioned_profiles?.some(profile => 
+         profile.fid.toString() === process.env.BOT_FID.toString()
+       )) {
+         const authorFid = req.body.data.author.fid;
+         const castHash = req.body.data.hash;
+         
+         console.log('Processing mention:', { authorFid, castHash });
+         await handleMention(authorFid, castHash);
+       } else {
+         console.log('Bot not mentioned in this cast');
+       }
      }
 
      return res.status(200).json({ status: 'Success' });
