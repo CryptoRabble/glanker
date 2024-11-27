@@ -126,34 +126,23 @@ async function generateTokenDetails(posts) {
 async function findRelevantImage(tokenName) {
  try {
    const response = await axios.get(
-     'https://api.pinterest.com/v5/pins/search',
+     `https://api.giphy.com/v1/gifs/search`,
      {
        params: {
-         query: tokenName,
-         page_size: 10,
-         media_type: 'image'
-       },
-       headers: {
-         'Authorization': `Bearer ${process.env.PINTEREST_API_KEY}`
+         api_key: process.env.GIPHY_API_KEY,
+         q: tokenName,
+         limit: 1,
+         rating: 'pg'
        }
      }
    );
 
-   if (!response.data?.items?.length) {
-     throw new Error('No Pinterest results found');
+   if (response.data.data.length > 0) {
+     return response.data.data[0].images.original.url;
    }
-
-   const validImages = response.data.items
-     .filter(item => item.media?.images?.original?.url || item.image?.original?.url)
-     .map(item => item.media?.images?.original?.url || item.image?.original?.url);
-
-   if (!validImages.length) {
-     throw new Error('No valid images found');
-   }
-
-   return validImages[Math.floor(Math.random() * validImages.length)];
+   return 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExcDI5NXEyMjR2Ym5zN3p1aWhkNjk4NmRqbDBvOWIxbGx6ZW95a2h6ZSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/dJYoOVAWf2QkU/giphy.gif';
  } catch (error) {
-   return 'https://i.pinimg.com/736x/9a/46/63/9a4663595d853c2e950a4bfb9a3a8772.jpg';
+   return 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExcDI5NXEyMjR2Ym5zN3p1aWhkNjk4NmRqbDBvOWIxbGx6ZW95a2h6ZSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/dJYoOVAWf2QkU/giphy.gif';
  }
 }
 
