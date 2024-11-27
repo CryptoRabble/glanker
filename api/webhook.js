@@ -44,8 +44,8 @@ async function handleMention(fid, replyToHash) {
  
  tokenCache.set(fid, { lastGenerated: now });
 
- const message = `@clanker, create this token:\n\nName: ${tokenDetails.name}\nTicker: ${tokenDetails.ticker}\nImage:\n  ${imageUrl}`;
- await createCastWithReply(replyToHash, message);
+ const message = `@clanker, create this token:\n\nName: ${tokenDetails.name}\nTicker: ${tokenDetails.ticker}`;
+ await createCastWithReply(replyToHash, message, imageUrl);
 }
 
 async function analyzeCasts(fid) {
@@ -146,11 +146,16 @@ async function findRelevantImage(tokenName) {
  }
 }
 
-async function createCastWithReply(replyToHash, message) {
+async function createCastWithReply(replyToHash, message, imageUrl) {
  await neynar.publishCast({
    signer_uuid: process.env.SIGNER_UUID,
    text: message,
-   parent: replyToHash
+   parent: replyToHash,
+   ...(imageUrl && {
+     embeds: [{
+       url: imageUrl
+     }]
+   })
  });
 }
 
