@@ -41,15 +41,11 @@ async function handleMention(fid, replyToHash) {
  const analysis = await analyzeCasts(fid);
  const tokenDetails = await generateTokenDetails(analysis);
  const imageUrl = await findRelevantImage(tokenDetails.name);
-
+ 
  tokenCache.set(fid, { lastGenerated: now });
 
- await createCastWithImage(
-   tokenDetails.name,
-   tokenDetails.ticker,
-   imageUrl,
-   replyToHash
- );
+ const message = `${tokenDetails.name}\n$${tokenDetails.ticker}\n${imageUrl}`;
+ await createCastWithReply(replyToHash, message);
 }
 
 async function analyzeCasts(fid) {
