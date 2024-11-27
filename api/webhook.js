@@ -82,13 +82,13 @@ async function handleMention(fid, replyToHash, castText) {
  const imageResult = await findRelevantImage(tokenDetails.name);
 
  if (!imageResult.success) {
-   await createCastWithReply(replyToHash, `${userResponse}\n\nUh, I can only handle so much. Try again in an hour!`);
+   await createCastWithReply(replyToHash, `${userResponse}\nUh, I can only handle so much. Try again in an hour!`);
    return;
  }
 
  tokenCache.set(fid, { lastGenerated: now });
 
- const message = `${userResponse}\n\n@clanker, create this token:\nName: ${tokenDetails.name}\nTicker: ${tokenDetails.ticker}`;
+ const message = `${userResponse}\n@clanker, create this token:\nName: ${tokenDetails.name}\nTicker: ${tokenDetails.ticker}`;
  await createCastWithReply(replyToHash, message, imageResult.url);
 }
 
