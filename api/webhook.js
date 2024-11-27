@@ -44,7 +44,7 @@ async function handleMention(fid, replyToHash) {
  
  tokenCache.set(fid, { lastGenerated: now });
 
- const message = `Name: ${tokenDetails.name}\nTicker: ${tokenDetails.ticker}\n Image: ${imageUrl}`;
+ const message = `@clanker, create this token:\n\nName: ${tokenDetails.name}\nTicker: ${tokenDetails.ticker}\n Image: ${imageUrl}`;
  await createCastWithReply(replyToHash, message);
 }
 
