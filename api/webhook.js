@@ -25,16 +25,16 @@ const anthropic = new Anthropic({
 const tokenCache = new Map();
 
 async function checkUserScore(fid) {
- try {
-   const response = await neynar.lookupUserByFid(fid);
-   const userScore = response.user?.experimental?.neynar_user_score || 0;
-   
-   console.log('User score for FID:', fid, 'Score:', userScore);
-   return userScore >= 0.50;
- } catch (error) {
-   console.error('Error checking user score:', error);
-   return false;
- }
+  try {
+    const response = await neynar.fetchBulkUsers({ fids: fid.toString() });
+    const userScore = response.users?.[0]?.experimental?.neynar_user_score || 0;
+    
+    console.log('User score for FID:', fid, 'Score:', userScore);
+    return userScore >= 0.50;
+  } catch (error) {
+    console.error('Error checking user score:', error);
+    return false;
+  }
 }
 
 async function handleMention(fid, replyToHash, castText) {
