@@ -170,40 +170,26 @@ async function downloadImage(imageUrl) {
 }
 
 async function uploadImageToFarcaster(imageBuffer) {
- try {
-   const formData = new FormData();
-   formData.append('file', imageBuffer, {
-     filename: 'token-image.jpg',
-     contentType: 'image/jpeg',
-   });
+  try {
+    const formData = new FormData();
+    formData.append('file', imageBuffer, {
+      filename: 'token-image.jpg',
+      contentType: 'image/jpeg',
+    });
 
-   // Updated for Neynar v2
-   const response = await neynar.uploadImage({
-     file: formData,
-     signer_uuid: process.env.SIGNER_UUID
-   });
-   
-   console.log('Image upload response:', response);
-   return response.url;
- } catch (error) {
-   console.error('Farcaster upload error:', error);
-   throw error;
- }
-}
-
-async function createCastWithImage(name, ticker, imageUrl, replyToHash) {
- const castText = `I've analyzed your posts and came up with this token based on your vibess.
- 
- @clanker create this token:\nName: ${name}\nTicker: $${ticker}\nImage:`;
- 
- await neynar.publishCast({
-   signer_uuid: process.env.SIGNER_UUID,
-   text: castText,
-   parent: replyToHash,
-   embeds: [{
-     url: imageUrl
-   }]
- });
+    // Correct method for Neynar v2
+    const response = await neynar.uploadMedia({
+      signer_uuid: process.env.SIGNER_UUID,
+      content_type: "image/jpeg",
+      file: formData
+    });
+    
+    console.log('Image upload response:', response);
+    return response.url;
+  } catch (error) {
+    console.error('Farcaster upload error:', error);
+    throw error;
+  }
 }
 
 async function createCastWithReply(replyToHash, message) {
