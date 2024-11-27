@@ -86,49 +86,48 @@ async function analyzeCasts(fid) {
 }
 
 async function generateTokenDetails(posts) {
-  const combinedContent = posts.map(p => p.text).join(' ');
-  
-  try {
-    const message = await anthropic.messages.create({
-      model: "claude-3-sonnet-20240229",
-      max_tokens: 100,
-      messages: [{
-        role: "user",
-        content: `You are an expert at creating a memecoin based on a user's posts on Warpcast. You will assist me in doing so.
-        Generate a memecoin based on these posts. You should take all posts into consideration and create an general idea for yourself on the personality of the person on which you base the memecoin:
-        User's posts: ${combinedContent}
+ const combinedContent = posts.map(p => p.text).join(' ');
+ 
+ try {
+   const message = await anthropic.messages.create({
+     model: "claude-3-sonnet-20240229",
+     max_tokens: 100,
+     messages: [{
+       role: "user",
+       content: `You are an expert at creating a memecoin based on a user's posts on Warpcast. You will assist me in doing so.
+       Generate a memecoin based on these posts. You should take all posts into consideration and create an general idea for yourself on the personality of the person on which you base the memecoin:
+       User's posts: ${combinedContent}
 
-        Please provide a memecoin token name and ticker in this exact format:
-        NAME
-        TICKER
+       Please provide a memecoin token name and ticker in this exact format:
+       NAME
+       TICKER
 
-        Rules: 
-        - Output ONLY the name on first line and ticker on second line. Nothing more.
-        - Do not use these words in any part of the output: Degen, wild, clanker, base, based, glonk, glonky bot, simple, roast, dog, invest, buy, purchase, frames, quirky, meme, milo, memecoin, Doge, Pepe, scene, scenecoin, launguage, name, farther, higher, bleu, moxie, warpcast, farcaster.
-        - Use only the english alphabet
-        - Do not use the letters 'Q', 'X', and 'Z' too much
-        - Do not use any existing popular memecoin names in the output
-        - The name should be a real word`
-      }]
-    });
+       Rules: 
+       - Output ONLY the name on first line and ticker on second line. Nothing more.
+       - Do not use these words in any part of the output: Degen, wild, clanker, base, based, glonk, glonky bot, simple, roast, dog, invest, buy, purchase, frames, quirky, meme, milo, memecoin, Doge, Pepe, scene, scenecoin, launguage, name, farther, higher, bleu, moxie, warpcast, farcaster.
+       - Use only the english alphabet
+       - Do not use the letters 'Q', 'X', and 'Z' too much
+       - Do not use any existing popular memecoin names in the output
+       - The name should be a real word`
+     }]
+   });
 
-    // Updated to use the correct response format
-    console.log('Claude response:', message);
-    const lines = message.content[0].text.split('\n').filter(line => line.trim());
-    
-    if (lines.length < 2) {
-      throw new Error('Invalid AI response format');
-    }
+   console.log('Claude response:', message);
+   const lines = message.content[0].text.split('\n').filter(line => line.trim());
+   
+   if (lines.length < 2) {
+     throw new Error('Invalid AI response format');
+   }
 
-    return {
-      name: lines[0].trim(),
-      ticker: lines[1].trim()
-    };
-  } catch (error) {
-    console.error('Token generation error:', error);
-    console.error('Full response:', message);
-    throw error;
-  }
+   return {
+     name: lines[0].trim(),
+     ticker: lines[1].trim()
+   };
+ } catch (error) {
+   console.error('Token generation error:', error);
+   console.error('Full response:', message);
+   throw error;
+ }
 }
 
 async function findRelevantImage(tokenName) {
@@ -171,14 +170,25 @@ async function downloadImage(imageUrl) {
 }
 
 async function uploadImageToFarcaster(imageBuffer) {
- const formData = new FormData();
- formData.append('file', imageBuffer, {
-   filename: 'token-image.jpg',
-   contentType: 'image/jpeg',
- });
+ try {
+   const formData = new FormData();
+   formData.append('file', imageBuffer, {
+     filename: 'token-image.jpg',
+     contentType: 'image/jpeg',
+   });
 
- const response = await neynar.publishCast.uploadImage(process.env.SIGNER_UUID, formData);
- return response.url;
+   // Updated for Neynar v2
+   const response = await neynar.uploadImage({
+     file: formData,
+     signer_uuid: process.env.SIGNER_UUID
+   });
+   
+   console.log('Image upload response:', response);
+   return response.url;
+ } catch (error) {
+   console.error('Farcaster upload error:', error);
+   throw error;
+ }
 }
 
 async function createCastWithImage(name, ticker, imageUrl, replyToHash) {
@@ -186,26 +196,22 @@ async function createCastWithImage(name, ticker, imageUrl, replyToHash) {
  
  @clanker create this token:\nName: ${name}\nTicker: $${ticker}\nImage:`;
  
- await neynar.publishCast.cast(
-   process.env.SIGNER_UUID,
-   castText,
-   {
-     replyTo: replyToHash,
-     embeds: [{
-       url: imageUrl
-     }]
-   }
- );
+ await neynar.publishCast({
+   signer_uuid: process.env.SIGNER_UUID,
+   text: castText,
+   parent: replyToHash,
+   embeds: [{
+     url: imageUrl
+   }]
+ });
 }
 
 async function createCastWithReply(replyToHash, message) {
- await neynar.publishCast.cast(
-   process.env.SIGNER_UUID,
-   message,
-   {
-     replyTo: replyToHash
-   }
- );
+ await neynar.publishCast({
+   signer_uuid: process.env.SIGNER_UUID,
+   text: message,
+   parent: replyToHash
+ });
 }
 
 export default async function handler(req, res) {
