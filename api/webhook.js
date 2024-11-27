@@ -1,5 +1,5 @@
 import { init, fetchQuery } from "@airstack/node";
-import { NeynarAPIClient } from '@neynar/nodejs-sdk';
+import { NeynarAPIClient, Configuration } from "@neynar/nodejs-sdk";
 import { Anthropic } from '@anthropic-ai/sdk';
 import axios from 'axios';
 import FormData from 'form-data';
@@ -7,7 +7,17 @@ import crypto from 'crypto';
 
 // Initialize clients
 init(process.env.AIRSTACK_API_KEY);
-const neynar = new NeynarAPIClient(process.env.NEYNAR_API_KEY);
+
+const neynarConfig = new Configuration({
+ apiKey: process.env.NEYNAR_API_KEY,
+ baseOptions: {
+   headers: {
+     "x-neynar-experimental": true,
+   },
+ },
+});
+const neynar = new NeynarAPIClient(neynarConfig);
+
 const anthropic = new Anthropic({
  apiKey: process.env.ANTHROPIC_API_KEY
 });
