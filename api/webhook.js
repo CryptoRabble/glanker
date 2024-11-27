@@ -254,7 +254,7 @@ export default async function handler(req, res) {
          console.log('Processing mention:', { authorFid, castHash, castText });
          await handleMention(authorFid, castHash, castText);
        } else {
-         console.log('Bot not mentioned in this cast');
+         console.log('Bot not mentioned in this cast'); 
        }
      }
 
