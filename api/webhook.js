@@ -147,7 +147,7 @@ async function generateTokenDetails(posts) {
        - Do not use any existing popular memecoin names in the output
        - The name should be a real word
        - The name can be 1-2 words
-       - Try and make the ticker a fun abbreviation of the name, if possible. If not, it should be the same as the name`
+       - The ticker should be the same as the name`
      }]
    });
 
