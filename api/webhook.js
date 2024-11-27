@@ -145,7 +145,8 @@ async function generateTokenDetails(posts) {
        - Use only the english alphabet
        - Do not use the letters 'Q', 'X', and 'Z' too much
        - Do not use any existing popular memecoin names in the output
-       - The name should be a real word`
+       - The name should be a real word
+       - The Ticker should be the same as the name`
      }]
    });
 
