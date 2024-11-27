@@ -24,28 +24,69 @@ const anthropic = new Anthropic({
 // In-memory cache for rate limiting
 const tokenCache = new Map();
 
-async function handleMention(fid, replyToHash) {
+async function checkUserScore(fid) {
+ try {
+   const response = await neynar.lookupUserByFid(fid);
+   const userScore = response.user?.experimental?.neynar_user_score || 0;
+   
+   console.log('User score for FID:', fid, 'Score:', userScore);
+   return userScore >= 0.50;
+ } catch (error) {
+   console.error('Error checking user score:', error);
+   return false;
+ }
+}
+
+async function handleMention(fid, replyToHash, castText) {
  console.log('Handling mention from FID:', fid);
- 
+
+ // Generate response to user text first
+ let userResponse = '';
+ const mentionText = castText.replace('@glanker', '').trim();
+ if (mentionText) {
+   const anthropicResponse = await anthropic.messages.create({
+     model: "claude-3-sonnet-20240229",
+     max_tokens: 150,
+     messages: [{
+       role: "user",
+       content: `You are a glonky token-generating bot. Someone has said: "${mentionText}". Respond to what they said in 1-2 sentence. Keeping in mind you are a glonky token bot. Keep the response brief but make it relevant to what they said. Here is an example of how you should sound: 
+       "Bruh... like... the air's, uh... heavy? But also, like... floatin'? And my... my feet, man... they're on the ground but, like, not really? Whoa, did you hear that? The grass is... humming, bro."`
+     }]
+   });
+   userResponse = `${anthropicResponse.content[0].text}\n\n`;
+ }
+
+ // Check user score before proceeding
+ const hasValidScore = await checkUserScore(fid);
+ if (!hasValidScore) {
+   await createCastWithReply(replyToHash, `${userResponse}\n\nSorry fren, you need a higher Neynar score to create tokens.\n\nhttps://warpcast.com/rish/0x458f80e4`);
+   return;
+ }
+
  const cachedData = tokenCache.get(fid);
  const now = Date.now();
- 
+
  if (cachedData) {
    const timeSinceLastGeneration = now - cachedData.lastGenerated;
    if (timeSinceLastGeneration < 24 * 60 * 60 * 1000) {
-     await createCastWithReply(replyToHash, "Daily limit reached");
+     await createCastWithReply(replyToHash, `${userResponse}\n\nDaily limit reached.`);
      return;
    }
  }
 
  const analysis = await analyzeCasts(fid);
  const tokenDetails = await generateTokenDetails(analysis);
- const imageUrl = await findRelevantImage(tokenDetails.name);
- 
+ const imageResult = await findRelevantImage(tokenDetails.name);
+
+ if (!imageResult.success) {
+   await createCastWithReply(replyToHash, `${userResponse}\n\nUh, I can only handle so much. Try again in an hour!`);
+   return;
+ }
+
  tokenCache.set(fid, { lastGenerated: now });
 
- const message = `@clanker, create this token:\n\nName: ${tokenDetails.name}\nTicker: ${tokenDetails.ticker}`;
- await createCastWithReply(replyToHash, message, imageUrl);
+ const message = `${userResponse}\n\n@clanker, create this token:\n\nName: ${tokenDetails.name}\nTicker: ${tokenDetails.ticker}`;
+ await createCastWithReply(replyToHash, message, imageResult.url);
 }
 
 async function analyzeCasts(fid) {
@@ -64,7 +105,7 @@ async function analyzeCasts(fid) {
      }
    }
  `;
- 
+
  try {
    const { data, error } = await fetchQuery(query);
    if (error) {
@@ -80,7 +121,7 @@ async function analyzeCasts(fid) {
 
 async function generateTokenDetails(posts) {
  const combinedContent = posts.map(p => p.text).join(' ');
- 
+
  try {
    const message = await anthropic.messages.create({
      model: "claude-3-sonnet-20240229",
@@ -107,7 +148,7 @@ async function generateTokenDetails(posts) {
 
    console.log('Claude response:', message);
    const lines = message.content[0].text.split('\n').filter(line => line.trim());
-   
+  
    if (lines.length < 2) {
      throw new Error('Invalid AI response format');
    }
@@ -138,11 +179,20 @@ async function findRelevantImage(tokenName) {
    );
 
    if (response.data.data.length > 0) {
-     return response.data.data[0].images.original.url;
+     return { success: true, url: response.data.data[0].images.original.url };
    }
-   return 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExcDI5NXEyMjR2Ym5zN3p1aWhkNjk4NmRqbDBvOWIxbGx6ZW95a2h6ZSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/dJYoOVAWf2QkU/giphy.gif';
+   return { 
+     success: true, 
+     url: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExcDI5NXEyMjR2Ym5zN3p1aWhkNjk4NmRqbDBvOWIxbGx6ZW95a2h6ZSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/dJYoOVAWf2QkU/giphy.gif'
+   };
  } catch (error) {
-   return 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExcDI5NXEyMjR2Ym5zN3p1aWhkNjk4NmRqbDBvOWIxbGx6ZW95a2h6ZSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/dJYoOVAWf2QkU/giphy.gif';
+   if (error.response?.status === 429) {
+     return { success: false, error: 'RATE_LIMIT' };
+   }
+   return { 
+     success: true, 
+     url: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExcDI5NXEyMjR2Ym5zN3p1aWhkNjk4NmRqbDBvOWIxbGx6ZW95a2h6ZSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/dJYoOVAWf2QkU/giphy.gif'
+   };
  }
 }
 
@@ -194,9 +244,10 @@ export default async function handler(req, res) {
        )) {
          const authorFid = req.body.data.author.fid;
          const castHash = req.body.data.hash;
-         
-         console.log('Processing mention:', { authorFid, castHash });
-         await handleMention(authorFid, castHash);
+         const castText = req.body.data.text;
+        
+         console.log('Processing mention:', { authorFid, castHash, castText });
+         await handleMention(authorFid, castHash, castText);
        } else {
          console.log('Bot not mentioned in this cast');
        }
