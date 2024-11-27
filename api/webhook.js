@@ -59,7 +59,7 @@ async function handleMention(fid, replyToHash, castText) {
  // Check user score before proceeding
  const hasValidScore = await checkUserScore(fid);
  if (!hasValidScore) {
-   await createCastWithReply(replyToHash, `${userResponse}\n\nSorry fren, you need a higher Neynar score to create tokens`, 
+   await createCastWithReply(replyToHash, `${userResponse}\nSorry fren, you need a higher Neynar score to create tokens`, 
     "https://warpcast.com/rish/0x458f80e4"
   );
    return;
@@ -71,7 +71,7 @@ async function handleMention(fid, replyToHash, castText) {
  if (cachedData) {
    const timeSinceLastGeneration = now - cachedData.lastGenerated;
    if (timeSinceLastGeneration < 24 * 60 * 60 * 1000) {
-     await createCastWithReply(replyToHash, `${userResponse}\n\nDaily limit reached.`);
+     await createCastWithReply(replyToHash, `${userResponse}\nDaily limit reached.`);
      return;
    }
  }
@@ -87,7 +87,7 @@ async function handleMention(fid, replyToHash, castText) {
 
  tokenCache.set(fid, { lastGenerated: now });
 
- const message = `${userResponse}\n\n@clanker, create this token:\n\nName: ${tokenDetails.name}\nTicker: ${tokenDetails.ticker}`;
+ const message = `${userResponse}\n\n@clanker, create this token:\nName: ${tokenDetails.name}\nTicker: ${tokenDetails.ticker}`;
  await createCastWithReply(replyToHash, message, imageResult.url);
 }
 
