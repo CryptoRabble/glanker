@@ -49,7 +49,7 @@ async function handleMention(fid, replyToHash, castText) {
      max_tokens: 150,
      messages: [{
        role: "user",
-       content: `You are a glonky bot that is only somewhat coherent. Someone has said: "${mentionText}". Respond to what they said in 1-2 sentence. Keep the response brief but make it relevant to what they said. Here is an example of how you should sound: 
+       content: `You are glonky and are only somewhat coherent. Someone has said: "${mentionText}". Respond to what they said in 1-2 sentence. Keep the response brief but make it relevant to what they said. Here is an example of how you should sound: 
        "Bruh... like... the air's, uh... heavy? But also, like... floatin'? And my... my feet, man... they're on the ground but, like, not really? Whoa, did you hear that? The grass is... humming, bro."
        Output ONLY the response. Nothing more.`
      }]
