@@ -1,4 +1,4 @@
-import { AirstackClient } from '@airstack/node';
+import { init, fetchQuery } from "@airstack/node";
 import { NeynarAPIClient } from '@neynar/nodejs-sdk';
 import { Anthropic } from '@anthropic-ai/sdk';
 import axios from 'axios';
@@ -6,7 +6,7 @@ import FormData from 'form-data';
 import crypto from 'crypto';
 
 // Initialize clients
-const airstack = new AirstackClient(process.env.AIRSTACK_API_KEY);
+init(process.env.AIRSTACK_API_KEY);
 const neynar = new NeynarAPIClient(process.env.NEYNAR_API_KEY);
 const anthropic = new Anthropic({
  apiKey: process.env.ANTHROPIC_API_KEY
@@ -48,20 +48,26 @@ async function handleMention(fid, replyToHash) {
 async function analyzeCasts(fid) {
  console.log('Analyzing casts for FID:', fid);
  const query = `
-   query GetUserCasts {
+   query GetLast25CastsByFid {
      FarcasterCasts(
-       input: {filter: {castedBy: {_eq: "${fid}"}}, blockchain: ALL, limit: 25}
+       input: {blockchain: ALL, filter: {castedBy: {_eq: "fc_fid:${fid}"}}, limit: 25}
      ) {
        Cast {
          text
-         timestamp
+         castedAtTimestamp
+         url
+         fid
        }
      }
    }
  `;
  
  try {
-   const { data } = await airstack.query(query);
+   const { data, error } = await fetchQuery(query);
+   if (error) {
+     throw new Error(error.message);
+   }
+   console.log('Retrieved casts:', data.FarcasterCasts.Cast);
    return data.FarcasterCasts.Cast;
  } catch (error) {
    console.error('Airstack query error:', error);
