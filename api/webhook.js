@@ -249,7 +249,7 @@ export default async function handler(req, res) {
        )) {
          const authorFid = req.body.data.author.fid;
          const castHash = req.body.data.hash;
-         const castText = req.body.data.text; 
+         const castText = req.body.data.text;
         
          console.log('Processing mention:', { authorFid, castHash, castText });
          await handleMention(authorFid, castHash, castText);
