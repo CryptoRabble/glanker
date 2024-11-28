@@ -27,14 +27,18 @@ const tokenCache = new Map();
 async function getRootCast(hash) {
   try {
     const response = await neynar.lookupCastByHashOrWarpcastUrl({
-      type: 'hash',
-      value: hash
+      identifier: {
+        type: 'hash',
+        value: hash
+      }
     });
     // Return the root cast if this is a reply
     if (response.cast.parent_hash) {
       const rootCast = await neynar.lookupCastByHashOrWarpcastUrl({
-        type: 'hash',
-        value: response.cast.root_parent_hash || response.cast.parent_hash
+        identifier: {
+          type: 'hash',
+          value: response.cast.root_parent_hash || response.cast.parent_hash
+        }
       });
       return [{
         text: rootCast.cast.text,
