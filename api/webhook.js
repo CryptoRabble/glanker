@@ -24,20 +24,40 @@ const anthropic = new Anthropic({
 // In-memory cache for rate limiting
 const tokenCache = new Map();
 
-async function checkUserScore(fid) {
-  try {
-    const response = await neynar.fetchBulkUsers({ fids: fid.toString() });
-    const userScore = response.users?.[0]?.experimental?.neynar_user_score || 0;
-    
-    console.log('User score for FID:', fid, 'Score:', userScore);
-    return userScore >= 0.75;
-  } catch (error) {
-    console.error('Error checking user score:', error);
-    return false;
-  }
+async function getRootCast(hash) {
+ try {
+   const response = await neynar.lookupCast(hash);
+   // Return the root cast if this is a reply
+   if (response.cast.parent_hash) {
+     const rootCast = await neynar.lookupCast(response.cast.root_parent_hash || response.cast.parent_hash);
+     return [{
+       text: rootCast.cast.text,
+       castedAtTimestamp: rootCast.cast.timestamp,
+       url: '', // These fields are required by your existing code
+       fid: rootCast.cast.author.fid
+     }];
+   }
+   return null; // Return null if this is not a reply
+ } catch (error) {
+   console.error('Error fetching root cast:', error);
+   return null;
+ }
 }
 
-async function handleMention(fid, replyToHash, castText) {
+async function checkUserScore(fid) {
+ try {
+   const response = await neynar.fetchBulkUsers({ fids: fid.toString() });
+   const userScore = response.users?.[0]?.experimental?.neynar_user_score || 0;
+   
+   console.log('User score for FID:', fid, 'Score:', userScore);
+   return userScore >= 0.75;
+ } catch (error) {
+   console.error('Error checking user score:', error);
+   return false;
+ }
+}
+
+async function handleMention(fid, replyToHash, castText, parentHash) {
  console.log('Handling mention from FID:', fid);
 
  // Generate response to user text first
@@ -61,8 +81,8 @@ async function handleMention(fid, replyToHash, castText) {
  const hasValidScore = await checkUserScore(fid);
  if (!hasValidScore) {
    await createCastWithReply(replyToHash, `${userResponse}\nSorry fren, you need a higher Neynar score to create tokens`, 
-    "https://warpcast.com/rish/0x458f80e4"
-  );
+     "https://warpcast.com/rish/0x458f80e4"
+   );
    return;
  }
 
@@ -77,7 +97,17 @@ async function handleMention(fid, replyToHash, castText) {
    }
  }
 
- const analysis = await analyzeCasts(fid);
+ // Get either root cast or user's casts
+ let analysis;
+ if (parentHash) {
+   analysis = await getRootCast(parentHash);
+   if (!analysis) {
+     analysis = await analyzeCasts(fid); // Fallback to normal behavior
+   }
+ } else {
+   analysis = await analyzeCasts(fid);
+ }
+
  const tokenDetails = await generateTokenDetails(analysis);
  const imageResult = await findRelevantImage(tokenDetails.name);
 
@@ -88,7 +118,7 @@ async function handleMention(fid, replyToHash, castText) {
 
  tokenCache.set(fid, { lastGenerated: now });
 
- const message = `${userResponse}@bogusbob, create this token:\nName: ${tokenDetails.name}\nTicker: ${tokenDetails.ticker}`;
+ const message = `${userResponse} create this token:\nName: ${tokenDetails.name}\nTicker: ${tokenDetails.ticker}`;
  await createCastWithReply(replyToHash, message, imageResult.url);
 }
 
@@ -131,8 +161,8 @@ async function generateTokenDetails(posts) {
      max_tokens: 100,
      messages: [{
        role: "user",
-       content: `You are an expert at creating a memecoin based on a user's posts on Warpcast. You will assist me in doing so.
-       Generate a memecoin based on these posts. You should take all posts into consideration and create an general idea for yourself on the personality of the person on which you base the memecoin:
+       content: `You are a stoner that has been tasked with creating a memecoin based on a user's posts on Warpcast. You will assist me in doing so.
+       Generate a memecoin based on these posts. You should take all posts into consideration and create an general interpratation. Your inturpritation should be from the view of a half-baked stoner (make it funny):
        User's posts: ${combinedContent}
 
        Please provide a memecoin token name and ticker in this exact format:
@@ -141,7 +171,7 @@ async function generateTokenDetails(posts) {
 
        Rules: 
        - Output ONLY the name on first line and ticker on second line. Nothing more.
-       - Do not use these words in any part of the output: Degen, crypto, blockchain, wild, blonde, anon, clanker, base, mfer, mfers, based, glonk, glonky, bot, simple, roast, dog, invest, buy, purchase, frames, quirky, meme, milo, memecoin, Doge, Pepe, scene, scenecoin, launguage, name, farther, higher, bleu, moxie, warpcast, farcaster.
+       - Do not use these words in any part of the output: Degen, crypto, blockchain, wild, blonde, anon, clanker, base, mfer, mfers,stoner, weed, based, glonk, glonky, bot, simple, roast, dog, invest, buy, purchase, frames, quirky, meme, milo, memecoin, Doge, Pepe, scene, scenecoin, launguage, name, farther, higher, bleu, moxie, warpcast, farcaster.
        - Use only the english alphabet
        - Do not use the letters 'Q', 'X', and 'Z' too much
        - Do not use any existing popular memecoin names in the output
@@ -250,9 +280,10 @@ export default async function handler(req, res) {
          const authorFid = req.body.data.author.fid;
          const castHash = req.body.data.hash;
          const castText = req.body.data.text;
-        
-         console.log('Processing mention:', { authorFid, castHash, castText });
-         await handleMention(authorFid, castHash, castText);
+         const parentHash = req.body.data.parent_hash;  // Get parent hash
+         
+         console.log('Processing mention:', { authorFid, castHash, castText, parentHash });
+         await handleMention(authorFid, castHash, castText, parentHash);
        } else {
          console.log('Bot not mentioned in this cast');
        }
