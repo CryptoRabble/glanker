@@ -26,10 +26,10 @@ const tokenCache = new Map();
 
 async function getRootCast(hash) {
  try {
-   const response = await neynar.lookupCast(hash);
+   const response = await neynar.lookupCastByHash(hash);
    // Return the root cast if this is a reply
    if (response.cast.parent_hash) {
-     const rootCast = await neynar.lookupCast(response.cast.root_parent_hash || response.cast.parent_hash);
+     const rootCast = await neynar.lookupCastByHash(response.cast.root_parent_hash || response.cast.parent_hash);
      return [{
        text: rootCast.cast.text,
        castedAtTimestamp: rootCast.cast.timestamp,
@@ -50,7 +50,7 @@ async function checkUserScore(fid) {
    const userScore = response.users?.[0]?.experimental?.neynar_user_score || 0;
    
    console.log('User score for FID:', fid, 'Score:', userScore);
-   return userScore >= 0.15;
+   return userScore >= 0.71;
  } catch (error) {
    console.error('Error checking user score:', error);
    return false;
@@ -118,7 +118,7 @@ async function handleMention(fid, replyToHash, castText, parentHash) {
 
  tokenCache.set(fid, { lastGenerated: now });
 
- const message = `${userResponse} create this token:\nName: ${tokenDetails.name}\nTicker: ${tokenDetails.ticker}`;
+ const message = `${userResponse}@clanker, create this token:\nName: ${tokenDetails.name}\nTicker: ${tokenDetails.ticker}`;
  await createCastWithReply(replyToHash, message, imageResult.url);
 }
 
@@ -162,7 +162,7 @@ async function generateTokenDetails(posts) {
      messages: [{
        role: "user",
        content: `You are a stoner that has been tasked with creating a memecoin based on a user's posts on Warpcast. You will assist me in doing so.
-       Generate a memecoin based on these posts. You should take all posts into consideration and create an general interpratation. Your inturpritation should be from the view of a half-baked stoner (make it funny):
+       Generate a memecoin based on these posts. You should take all posts into consideration and create an general idea for yourself on the personality of the person on which you base the memecoin:
        User's posts: ${combinedContent}
 
        Please provide a memecoin token name and ticker in this exact format:
@@ -171,7 +171,7 @@ async function generateTokenDetails(posts) {
 
        Rules: 
        - Output ONLY the name on first line and ticker on second line. Nothing more.
-       - Do not use these words in any part of the output: Degen, crypto, blockchain, wild, blonde, anon, clanker, base, mfer, mfers,stoner, weed, based, glonk, glonky, bot, simple, roast, dog, invest, buy, purchase, frames, quirky, meme, milo, memecoin, Doge, Pepe, scene, scenecoin, launguage, name, farther, higher, bleu, moxie, warpcast, farcaster.
+       - Do not use these words in any part of the output: Degen, crypto, blockchain, wild, blonde, anon, clanker, base, mfer, mfers, stoner, weed, based, glonk, glonky, bot, simple, roast, dog, invest, buy, purchase, frames, quirky, meme, milo, memecoin, Doge, Pepe, scene, scenecoin, launguage, name, farther, higher, bleu, moxie, warpcast, farcaster.
        - Use only the english alphabet
        - Do not use the letters 'Q', 'X', and 'Z' too much
        - Do not use any existing popular memecoin names in the output
