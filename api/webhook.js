@@ -25,23 +25,29 @@ const anthropic = new Anthropic({
 const tokenCache = new Map();
 
 async function getRootCast(hash) {
- try {
-   const response = await neynar.lookupCastByHash(hash);
-   // Return the root cast if this is a reply
-   if (response.cast.parent_hash) {
-     const rootCast = await neynar.lookupCastByHash(response.cast.root_parent_hash || response.cast.parent_hash);
-     return [{
-       text: rootCast.cast.text,
-       castedAtTimestamp: rootCast.cast.timestamp,
-       url: '', // These fields are required by your existing code
-       fid: rootCast.cast.author.fid
-     }];
-   }
-   return null; // Return null if this is not a reply
- } catch (error) {
-   console.error('Error fetching root cast:', error);
-   return null;
- }
+  try {
+    const response = await neynar.lookupCastByHashOrWarpcastUrl({
+      type: 'hash',
+      value: hash
+    });
+    // Return the root cast if this is a reply
+    if (response.cast.parent_hash) {
+      const rootCast = await neynar.lookupCastByHashOrWarpcastUrl({
+        type: 'hash',
+        value: response.cast.root_parent_hash || response.cast.parent_hash
+      });
+      return [{
+        text: rootCast.cast.text,
+        castedAtTimestamp: rootCast.cast.timestamp,
+        url: '', 
+        fid: rootCast.cast.author.fid
+      }];
+    }
+    return null;
+  } catch (error) {
+    console.error('Error fetching root cast:', error);
+    return null;
+  }
 }
 
 async function checkUserScore(fid) {
