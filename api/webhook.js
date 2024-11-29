@@ -59,27 +59,34 @@ async function checkUserScore(fid) {
 async function handleMention(fid, replyToHash, castText, parentHash) {
  console.log('Handling mention from FID:', fid);
 
- // Check daily limit first
+ // Generate response if there's text
+ let userResponse = '';
+ const mentionText = castText.replace('@glanker', '').trim();
+ if (mentionText) {
+   const anthropicResponse = await anthropic.messages.create({
+     model: "claude-3-sonnet-20240229",
+     max_tokens: 150,
+     messages: [{
+       role: "user",
+       content: `You are glonky and your speech is barely coherent. Someone has said: "${mentionText}". Respond to what they said in 1-2 sentences. Keep the response brief but make it relevant to what they said. Here is an example of how you should sound: 
+       "Bruh... like... the air's, uh... heavy? But also, like... floatin'? And my... my feet, ... they're on the ground but, like, not really? Whoa, did you hear that? The grass is... humming."
+       Output ONLY the response. Nothing more.`
+     }]
+   });
+   userResponse = `${anthropicResponse.content[0].text}\n\n`;
+ }
+
+ // Check user score before proceeding
+ const hasValidScore = await checkUserScore(fid);
+ if (!hasValidScore) {
+   await createCastWithReply(replyToHash, `${userResponse}Sorry fren, you need a higher Neynar score to create tokens`);
+   return;
+ }
+
+ // Check daily limit here, after score check but before expensive operations
  const cachedData = tokenCache.get(fid);
  const now = Date.now();
-
  if (cachedData && (now - cachedData.lastGenerated) < 24 * 60 * 60 * 1000) {
-   // Generate response if there's text
-   let userResponse = '';
-   const mentionText = castText.replace('@glanker', '').trim();
-   if (mentionText) {
-     const anthropicResponse = await anthropic.messages.create({
-       model: "claude-3-sonnet-20240229",
-       max_tokens: 150,
-       messages: [{
-         role: "user",
-         content: `You are glonky and your speech is barely coherent. Someone has said: "${mentionText}". Respond to what they said in 1-2 sentences. Keep the response brief but make it relevant to what they said. Here is an example of how you should sound: 
-         "Bruh... like... the air's, uh... heavy? But also, like... floatin'? And my... my feet, ... they're on the ground but, like, not really? Whoa, did you hear that? The grass is... humming."
-         Output ONLY the response. Nothing more.`
-       }]
-     });
-     userResponse = `${anthropicResponse.content[0].text}\n\n`;
-   }
    await createCastWithReply(replyToHash, `${userResponse}Daily limit reached. Come back tomorrow!`);
    return;
  }
@@ -91,36 +98,6 @@ async function handleMention(fid, replyToHash, castText, parentHash) {
    if (parentCast) {
      parentCastText = parentCast[0].text;
    }
- }
-
- // Generate response to user text
- let userResponse = '';
- const mentionText = castText.replace('@glanker', '').trim();
- if (mentionText) {
-   const anthropicResponse = await anthropic.messages.create({
-     model: "claude-3-sonnet-20240229",
-     max_tokens: 150,
-     messages: [{
-       role: "user",
-       content: `You are glonky and your speech is barely coherent. ${
-         parentCastText 
-           ? `Someone has posted: "${parentCastText}" and someone else replied asking: "${mentionText}".`
-           : `Someone has said: "${mentionText}".`
-       } Respond to what they said in 1-2 sentences. Keep the response brief but make it relevant to what they said. Here is an example of how you should sound: 
-       "Bruh... like... the air's, uh... heavy? But also, like... floatin'? And my... my feet, ... they're on the ground but, like, not really? Whoa, did you hear that? The grass is... humming."
-       Output ONLY the response. Nothing more.`
-     }]
-   });
-   userResponse = `${anthropicResponse.content[0].text}\n\n`;
- }
-
- // Check user score before proceeding
- const hasValidScore = await checkUserScore(fid);
- if (!hasValidScore) {
-   await createCastWithReply(replyToHash, `${userResponse}Sorry fren, you need a higher Neynar score to create tokens`, 
-     "https://warpcast.com/rish/0x458f80e4" 
-   );
-   return;
  }
 
  // Get either parent cast or user's casts
