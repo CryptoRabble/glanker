@@ -228,13 +228,14 @@ async function findRelevantImage(tokenName) {
     );
 
     if (response.data.data.length > 0) {
-      // Find first item that has a link ending in jpg, jpeg, png, or gif (case insensitive)
-      const image = response.data.data.find(item => 
-        item.link?.toLowerCase().endsWith('.jpg') || 
-        item.link?.toLowerCase().endsWith('.jpeg') ||
-        item.link?.toLowerCase().endsWith('.png') ||
-        item.link?.toLowerCase().endsWith('.gif')
-      );
+      // Find first item that has a link ending in jpg, jpeg, or png (case insensitive)
+      const image = response.data.data.find(item => {
+        const link = item.link?.toLowerCase() || '';
+        return link.endsWith('.jpg') || 
+               link.endsWith('.jpeg') || 
+               link.endsWith('.gif') || 
+               link.endsWith('.png');
+      });
       if (image) {
         return { success: true, url: image.link };
       }
