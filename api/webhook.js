@@ -3,8 +3,7 @@ import { NeynarAPIClient, Configuration } from "@neynar/nodejs-sdk";
 import { Anthropic } from '@anthropic-ai/sdk';
 import axios from 'axios';
 import crypto from 'crypto';
-import Redis from 'ioredis';
-
+import { safeRedisGet, safeRedisSet } from '/utils/redisUtils';
 // Initialize clients
 init(process.env.AIRSTACK_API_KEY);
 
@@ -21,8 +20,6 @@ const neynar = new NeynarAPIClient(neynarConfig);
 const anthropic = new Anthropic({
  apiKey: process.env.ANTHROPIC_API_KEY
 });
-
-const redis = new Redis(process.env.REDIS_URL);
 
 async function getRootCast(hash) {
  try {
@@ -83,18 +80,20 @@ async function handleMention(fid, replyToHash, castText, parentHash) {
    return;
  }
 
- // Check daily limit using Redis
- const key = `token_generation:${fid}`;
- const lastGenerated = await redis.get(key);
+ // Check daily limit here, after score check but before expensive operations
+ const redisKey = `token:${fid}`;
+ const cachedData = await safeRedisGet(redisKey);
  const now = Date.now();
-  
- if (lastGenerated && (now - parseInt(lastGenerated)) < 24 * 60 * 60 * 1000) {
-   await createCastWithReply(replyToHash, `${userResponse}Daily limit reached. Come back tomorrow!`);
-   return;
+
+ if (cachedData) {
+   const parsedData = JSON.parse(cachedData);
+   if ((now - parsedData.lastGenerated) < 24 * 60 * 60 * 1000) {
+     await createCastWithReply(replyToHash, `${userResponse}Daily limit reached. Come back tomorrow!`);
+     return;
+   }
  }
 
- // Set the new timestamp with 24h expiration
- await redis.set(key, now, 'EX', 24 * 60 * 60);
+ await safeRedisSet(redisKey, JSON.stringify({ lastGenerated: now }));
 
  // Get parent cast content if it exists
  let parentCastText = '';
@@ -266,6 +265,7 @@ async function findRelevantImage(tokenName) {
         return { success: true, url: validImages[Math.floor(Math.random() * validImages.length)] };
       }
     }
+    
     // Fallback if everything fails
     return { 
       success: true, 
