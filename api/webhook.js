@@ -233,7 +233,7 @@ async function findRelevantImage(tokenName) {
         item.link?.toLowerCase().endsWith('.gif')
       );
       if (image) {
-        return { success: true, url: image.link };
+        return { success: true, url: image.link }; 
       }
     }
     return { 
