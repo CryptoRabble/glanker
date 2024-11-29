@@ -135,7 +135,7 @@ async function handleMention(fid, replyToHash, castText, parentHash) {
    return;
  }
 
- tokenCache.set(fid, { lastGenerated: now });
+ tokenCache.set(fid, { lastGenerated: now }); 
 
  const message = parentHash 
    ? `${userResponse}Yo, this cast is spacey... here's a token based on it:\n\n@clanker create this token:\nName: ${tokenDetails.name}\nTicker: ${tokenDetails.ticker}`
