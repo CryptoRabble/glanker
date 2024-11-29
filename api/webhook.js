@@ -59,7 +59,16 @@ async function checkUserScore(fid) {
 async function handleMention(fid, replyToHash, castText, parentHash) {
  console.log('Handling mention from FID:', fid);
 
- // Generate response to user text first
+ // Get parent cast content first if it exists
+ let parentCastText = '';
+ if (parentHash) {
+   const parentCast = await getRootCast(parentHash);
+   if (parentCast) {
+     parentCastText = parentCast[0].text;
+   }
+ }
+
+ // Generate response to user text
  let userResponse = '';
  const mentionText = castText.replace('@glanker', '').trim();
  if (mentionText) {
@@ -80,7 +89,7 @@ async function handleMention(fid, replyToHash, castText, parentHash) {
    userResponse = `${anthropicResponse.content[0].text}\n\n`;
  }
 
- // Check user score
+ // Check user score before proceeding
  const hasValidScore = await checkUserScore(fid);
  if (!hasValidScore) {
    await createCastWithReply(replyToHash, `${userResponse}\nSorry fren, you need a higher Neynar score to create tokens`, 
@@ -89,25 +98,12 @@ async function handleMention(fid, replyToHash, castText, parentHash) {
    return;
  }
 
- // Move cache check here, before any token generation
  const cachedData = tokenCache.get(fid);
  const now = Date.now();
 
- if (cachedData) {
-   const timeSinceLastGeneration = now - cachedData.lastGenerated;
-   if (timeSinceLastGeneration < 24 * 60 * 60 * 1000) {
-     await createCastWithReply(replyToHash, `${userResponse}\nDaily limit reached. Try again tomorrow!`);
-     return;
-   }
- }
-
- // Get parent cast content first if it exists
- let parentCastText = '';
- if (parentHash) {
-   const parentCast = await getRootCast(parentHash);
-   if (parentCast) {
-     parentCastText = parentCast[0].text;
-   }
+ if (cachedData && (now - cachedData.lastGenerated) < 24 * 60 * 60 * 1000) {
+   await createCastWithReply(replyToHash, `${userResponse}\nDaily limit reached. Come back tomorrow!`);
+   return;
  }
 
  // Get either root cast or user's casts
