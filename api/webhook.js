@@ -59,6 +59,16 @@ async function checkUserScore(fid) {
 async function handleMention(fid, replyToHash, castText, parentHash) {
  console.log('Handling mention from FID:', fid);
 
+ // Add this near the start of the function to get user info
+ let username = '';
+ try {
+   const userResponse = await neynar.fetchBulkUsers({ fids: fid.toString() });
+   username = userResponse.users[0].username;
+ } catch (error) {
+   console.error('Error fetching username:', error);
+   username = 'fren';
+ }
+
  // Get parent cast content first if it exists
  let parentCastText = '';
  if (parentHash) {
@@ -128,8 +138,8 @@ async function handleMention(fid, replyToHash, castText, parentHash) {
  tokenCache.set(fid, { lastGenerated: now });
 
  const message = parentHash 
-   ? `${userResponse}Yo, this cast is spacey, here's a token based on it:\n@clanker create this token:\nName: ${tokenDetails.name}\nTicker: ${tokenDetails.ticker}`
-   : `${userResponse}I looked through your casts... they're pretty glonky eyy.\n@clanker create this token:\nName: ${tokenDetails.name}\nTicker: ${tokenDetails.ticker}`;
+   ? `${userResponse}Yo, this cast is spacey, here's a token based on it:\n\nhey @clanker create this token:\nName: ${tokenDetails.name}\nTicker: ${tokenDetails.ticker}`
+   : `${userResponse}I looked through your casts... they're pretty glonky.\n\nhey @clanker create this token for @${username}:\nName: ${tokenDetails.name}\nTicker: ${tokenDetails.ticker}`;
  await createCastWithReply(replyToHash, message, imageResult.url);
 }
 
