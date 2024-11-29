@@ -124,7 +124,7 @@ async function handleMention(fid, replyToHash, castText, parentHash) {
 
  tokenCache.set(fid, { lastGenerated: now });
 
- const message = `${userResponse} @clanker create this token:\nName: ${tokenDetails.name}\nTicker: ${tokenDetails.ticker}`;
+ const message = `${userResponse}@clanker create this token:\nName: ${tokenDetails.name}\nTicker: ${tokenDetails.ticker}`;
  await createCastWithReply(replyToHash, message, imageResult.url);
 }
 
@@ -167,7 +167,7 @@ async function generateTokenDetails(posts) {
      max_tokens: 100,
      messages: [{
        role: "user",
-       content: `You are glonky and incoherent, but you have been tasked with creating a memecoin based on a user's posts on Warpcast. You will assist me in doing so.
+       content: `You are are a glonky and incoherent bot that has been tasked with creating a memecoin based on a user's posts on Warpcast. You will assist me in doing so.
        Generate a memecoin based on these posts. You should take all posts into consideration and create an general idea for yourself on the personality of the person on which you base the memecoin:
        User's posts: ${combinedContent}
 
@@ -177,7 +177,7 @@ async function generateTokenDetails(posts) {
 
        Rules: 
        - Output ONLY the name on first line and ticker on second line. Nothing more.
-       - Do not use these words in any part of the output: Degen, crypto, blockchain, wild, blonde, anon, clanker, pot, base, mfer, mfers, stoner, weed, based, glonk, glonky, bot, simple, roast, dog, invest, buy, purchase, frames, quirky, meme, milo, memecoin, Doge, Pepe, scene, scenecoin, launguage, name, farther, higher, bleu, moxie, warpcast, farcaster.
+       - Do not use these words in any part of the output: Degen, crypto, incoherent, coherent,blockchain, wild, blonde, anon, clanker, pot, base, mfer, mfers, stoner, weed, based, glonk, glonky, bot, simple, roast, dog, invest, buy, purchase, frames, quirky, meme, milo, memecoin, Doge, Pepe, scene, scenecoin, launguage, name, farther, higher, bleu, moxie, warpcast, farcaster.
        - Use only the english alphabet
        - Do not use the letters 'Q', 'X', and 'Z' too much
        - Do not use any existing popular memecoin names in the output
