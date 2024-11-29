@@ -216,7 +216,7 @@ async function generateTokenDetails(posts) {
 async function findRelevantImage(tokenName) {
   try {
     const response = await axios.get(
-      'https://api.imgur.com/3/gallery/search',
+      'https://api.imgur.com/3/gallery/search/top/all/0',
       {
         params: {
           q: tokenName,
