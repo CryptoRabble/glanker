@@ -59,16 +59,6 @@ async function checkUserScore(fid) {
 async function handleMention(fid, replyToHash, castText, parentHash) {
  console.log('Handling mention from FID:', fid);
 
- // Add this near the start of the function to get user info
- let username = '';
- try {
-   const userResponse = await neynar.fetchBulkUsers({ fids: fid.toString() });
-   username = userResponse.users[0].username;
- } catch (error) {
-   console.error('Error fetching username:', error);
-   username = 'fren';
- }
-
  // Get parent cast content first if it exists
  let parentCastText = '';
  if (parentHash) {
@@ -135,11 +125,11 @@ async function handleMention(fid, replyToHash, castText, parentHash) {
    return;
  }
 
- tokenCache.set(fid, { lastGenerated: now }); 
+ tokenCache.set(fid, { lastGenerated: now });
 
  const message = parentHash 
-   ? `${userResponse}Yo, this cast is spacey... here's a token based on it:\n\n@clanker create this token:\nName: ${tokenDetails.name}\nTicker: ${tokenDetails.ticker}`
-   : `${userResponse}I check out your casts... they're pretty glonky... here's a token based on your vibe:\n\n@clanker create this token:\nName: ${tokenDetails.name}\nTicker: ${tokenDetails.ticker}`;
+ ? `${userResponse}Yo, this cast is spacey... here's a token based on it:\n\n@clanker create this token:\nName: ${tokenDetails.name}\nTicker: ${tokenDetails.ticker}`
+ : `${userResponse}I checked out your casts... they're pretty glonky... here's a token based on your vibe:\n\n@clanker create this token:\nName: ${tokenDetails.name}\nTicker: ${tokenDetails.ticker}`;
  await createCastWithReply(replyToHash, message, imageResult.url);
 }
 
@@ -235,17 +225,13 @@ async function findRelevantImage(tokenName) {
     );
 
     if (response.data.data.length > 0) {
-      // Find first item that has a link ending in jpg, jpeg, png, or gif (case insensitive)
-      const image = response.data.data.find(item => 
-        item.link?.toLowerCase().endsWith('.jpg') || 
-        item.link?.toLowerCase().endsWith('.jpeg') ||
-        item.link?.toLowerCase().endsWith('.png') ||
-        item.link?.toLowerCase().endsWith('.gif')
-      );
+      // Just take the first image that has a link
+      const image = response.data.data.find(item => item.link);
       if (image) {
         return { success: true, url: image.link };
       }
     }
+    
     return { 
       success: true, 
       url: 'https://i.imgur.com/8nLFCVP.png' // Default fallback image
