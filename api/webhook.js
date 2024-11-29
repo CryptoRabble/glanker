@@ -89,7 +89,7 @@ async function handleMention(fid, replyToHash, castText, parentHash) {
    userResponse = `${anthropicResponse.content[0].text}\n\n`;
  }
 
- // Check rate limit
+ // Check rate limit 
  const cachedData = tokenCache.get(fid);
  const now = Date.now();
 
