@@ -206,35 +206,43 @@ async function generateTokenDetails(posts) {
 }
 
 async function findRelevantImage(tokenName) {
- try {
-   const response = await axios.get(
-     `https://api.giphy.com/v1/gifs/search`,
-     {
-       params: {
-         api_key: process.env.GIPHY_API_KEY,
-         q: tokenName,
-         limit: 1,
-         rating: 'pg'
-       }
-     }
-   );
+  try {
+    const response = await axios.get(
+      'https://api.imgur.com/3/gallery/search',
+      {
+        params: {
+          q: tokenName,
+        },
+        headers: {
+          'Authorization': `Client-ID ${process.env.IMGUR_CLIENT_ID}`
+        }
+      }
+    );
 
-   if (response.data.data.length > 0) {
-     return { success: true, url: response.data.data[0].images.original.url };
-   }
-   return { 
-     success: true, 
-     url: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExcDI5NXEyMjR2Ym5zN3p1aWhkNjk4NmRqbDBvOWIxbGx6ZW95a2h6ZSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/dJYoOVAWf2QkU/giphy.gif'
-   };
- } catch (error) {
-   if (error.response?.status === 429) {
-     return { success: false, error: 'RATE_LIMIT' };
-   }
-   return { 
-     success: true, 
-     url: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExcDI5NXEyMjR2Ym5zN3p1aWhkNjk4NmRqbDBvOWIxbGx6ZW95a2h6ZSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/dJYoOVAWf2QkU/giphy.gif'
-   };
- }
+    if (response.data.data.length > 0) {
+      // Find first item that has a link ending in jpg or png (case insensitive)
+      const image = response.data.data.find(item => 
+        item.link?.toLowerCase().endsWith('.jpg') || 
+        item.link?.toLowerCase().endsWith('.png')
+      );
+      if (image) {
+        return { success: true, url: image.link };
+      }
+    }
+    return { 
+      success: true, 
+      url: 'https://i.imgur.com/8nLFCVP.png' // Default fallback image
+    };
+  } catch (error) {
+    console.error('Imgur API error:', error);
+    if (error.response?.status === 429) {
+      return { success: false, error: 'RATE_LIMIT' };
+    }
+    return { 
+      success: true, 
+      url: 'https://i.imgur.com/8nLFCVP.png' // Default fallback image
+    };
+  }
 }
 
 async function createCastWithReply(replyToHash, message, imageUrl) {
