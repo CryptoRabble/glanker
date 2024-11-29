@@ -89,6 +89,15 @@ async function handleMention(fid, replyToHash, castText, parentHash) {
    userResponse = `${anthropicResponse.content[0].text}\n\n`;
  }
 
+ // Check rate limit
+ const cachedData = tokenCache.get(fid);
+ const now = Date.now();
+
+ if (cachedData && (now - cachedData.lastGenerated) < 24 * 60 * 60 * 1000) {
+   await createCastWithReply(replyToHash, `${userResponse}\nDaily limit reached. Come back tomorrow!`);
+   return;
+ }
+
  // Check user score before proceeding
  const hasValidScore = await checkUserScore(fid);
  if (!hasValidScore) {
@@ -98,13 +107,7 @@ async function handleMention(fid, replyToHash, castText, parentHash) {
    return;
  }
 
- const cachedData = tokenCache.get(fid);
- const now = Date.now();
 
- if (cachedData && (now - cachedData.lastGenerated) < 24 * 60 * 60 * 1000) {
-   await createCastWithReply(replyToHash, `${userResponse}\nDaily limit reached. Come back tomorrow!`);
-   return;
- }
 
  // Get either root cast or user's casts
  let analysis;
@@ -233,7 +236,7 @@ async function findRelevantImage(tokenName) {
         item.link?.toLowerCase().endsWith('.gif')
       );
       if (image) {
-        return { success: true, url: image.link }; 
+        return { success: true, url: image.link };
       }
     }
     return { 
