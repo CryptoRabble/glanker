@@ -194,7 +194,7 @@ async function generateTokenDetails(posts) {
        User's posts: ${combinedContent}
 
        Please provide a memecoin token name and ticker in this exact format:
-       NAME
+       Name
        TICKER
 
        Rules: 
