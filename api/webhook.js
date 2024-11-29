@@ -43,7 +43,7 @@ async function getRootCast(hash) {
         fid: rootCast.cast.author.fid
       }];
     }
-    return null;
+    return null; 
   } catch (error) {
     console.error('Error fetching root cast:', error);
     return null;
