@@ -138,8 +138,8 @@ async function handleMention(fid, replyToHash, castText, parentHash) {
  tokenCache.set(fid, { lastGenerated: now });
 
  const message = parentHash 
-   ? `${userResponse}Yo, this cast is spacey, here's a token based on it:\n\nhey @clanker create this token:\nName: ${tokenDetails.name}\nTicker: ${tokenDetails.ticker}`
-   : `${userResponse}I looked through your casts... they're pretty glonky.\n\nhey @clanker create this token for @${username}:\nName: ${tokenDetails.name}\nTicker: ${tokenDetails.ticker}`;
+   ? `${userResponse}Yo, this cast is spacey... here's a token based on it:\n\n@clanker create this token:\nName: ${tokenDetails.name}\nTicker: ${tokenDetails.ticker}`
+   : `${userResponse}I check out your casts... they're pretty glonky... here's a token based on your vibe:\n\n@clanker create this token:\nName: ${tokenDetails.name}\nTicker: ${tokenDetails.ticker}`;
  await createCastWithReply(replyToHash, message, imageResult.url);
 }
 
