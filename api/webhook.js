@@ -93,7 +93,7 @@ async function handleMention(fid, replyToHash, castText, parentHash) {
  const hasValidScore = await checkUserScore(fid);
  if (!hasValidScore) {
    await createCastWithReply(replyToHash, `${userResponse}\nSorry fren, you need a higher Neynar score to create tokens`, 
-     "https://warpcast.com/rish/0x458f80e4"
+     "https://warpcast.com/rish/0x458f80e4" 
    );
    return;
  }
