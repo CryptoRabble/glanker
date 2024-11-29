@@ -3,6 +3,7 @@ import { NeynarAPIClient, Configuration } from "@neynar/nodejs-sdk";
 import { Anthropic } from '@anthropic-ai/sdk';
 import axios from 'axios';
 import crypto from 'crypto';
+import Redis from 'ioredis';
 
 // Initialize clients
 init(process.env.AIRSTACK_API_KEY);
@@ -21,8 +22,7 @@ const anthropic = new Anthropic({
  apiKey: process.env.ANTHROPIC_API_KEY
 });
 
-// In-memory cache for rate limiting
-const tokenCache = new Map();
+const redis = new Redis(process.env.REDIS_URL);
 
 async function getRootCast(hash) {
  try {
@@ -83,15 +83,18 @@ async function handleMention(fid, replyToHash, castText, parentHash) {
    return;
  }
 
- // Check daily limit here, after score check but before expensive operations
- const cachedData = tokenCache.get(fid);
+ // Check daily limit using Redis
+ const key = `token_generation:${fid}`;
+ const lastGenerated = await redis.get(key);
  const now = Date.now();
- if (cachedData && (now - cachedData.lastGenerated) < 24 * 60 * 60 * 1000) {
+  
+ if (lastGenerated && (now - parseInt(lastGenerated)) < 24 * 60 * 60 * 1000) {
    await createCastWithReply(replyToHash, `${userResponse}Daily limit reached. Come back tomorrow!`);
    return;
  }
 
- tokenCache.set(fid, { lastGenerated: now });
+ // Set the new timestamp with 24h expiration
+ await redis.set(key, now, 'EX', 24 * 60 * 60);
 
  // Get parent cast content if it exists
  let parentCastText = '';
