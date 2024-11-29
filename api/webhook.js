@@ -59,16 +59,7 @@ async function checkUserScore(fid) {
 async function handleMention(fid, replyToHash, castText, parentHash) {
  console.log('Handling mention from FID:', fid);
 
- // Get parent cast content first if it exists
- let parentCastText = '';
- if (parentHash) {
-   const parentCast = await getRootCast(parentHash);
-   if (parentCast) {
-     parentCastText = parentCast[0].text;
-   }
- }
-
- // Generate response to user text
+ // Generate response to user text first
  let userResponse = '';
  const mentionText = castText.replace('@glanker', '').trim();
  if (mentionText) {
@@ -89,7 +80,7 @@ async function handleMention(fid, replyToHash, castText, parentHash) {
    userResponse = `${anthropicResponse.content[0].text}\n\n`;
  }
 
- // Check user score before proceeding
+ // Check user score
  const hasValidScore = await checkUserScore(fid);
  if (!hasValidScore) {
    await createCastWithReply(replyToHash, `${userResponse}\nSorry fren, you need a higher Neynar score to create tokens`, 
@@ -98,14 +89,24 @@ async function handleMention(fid, replyToHash, castText, parentHash) {
    return;
  }
 
+ // Move cache check here, before any token generation
  const cachedData = tokenCache.get(fid);
  const now = Date.now();
 
  if (cachedData) {
    const timeSinceLastGeneration = now - cachedData.lastGenerated;
    if (timeSinceLastGeneration < 24 * 60 * 60 * 1000) {
-     await createCastWithReply(replyToHash, `${userResponse}\nDaily limit reached.`);
+     await createCastWithReply(replyToHash, `${userResponse}\nDaily limit reached. Try again tomorrow!`);
      return;
+   }
+ }
+
+ // Get parent cast content first if it exists
+ let parentCastText = '';
+ if (parentHash) {
+   const parentCast = await getRootCast(parentHash);
+   if (parentCast) {
+     parentCastText = parentCast[0].text;
    }
  }
 
@@ -130,7 +131,9 @@ async function handleMention(fid, replyToHash, castText, parentHash) {
 
  tokenCache.set(fid, { lastGenerated: now });
 
- const message = `${userResponse}@clanker create this token:\nName: ${tokenDetails.name}\nTicker: ${tokenDetails.ticker}`;
+ const message = parentHash 
+   ? `${userResponse}Yo, this cast is spacey, here's a token based on it:\n@clanker create this token:\nName: ${tokenDetails.name}\nTicker: ${tokenDetails.ticker}`
+   : `${userResponse}I looked through your casts... they're pretty glonky eyy.\n@clanker create this token:\nName: ${tokenDetails.name}\nTicker: ${tokenDetails.ticker}`;
  await createCastWithReply(replyToHash, message, imageResult.url);
 }
 
@@ -226,10 +229,12 @@ async function findRelevantImage(tokenName) {
     );
 
     if (response.data.data.length > 0) {
-      // Find first item that has a link ending in jpg or png (case insensitive)
+      // Find first item that has a link ending in jpg, jpeg, png, or gif (case insensitive)
       const image = response.data.data.find(item => 
         item.link?.toLowerCase().endsWith('.jpg') || 
-        item.link?.toLowerCase().endsWith('.png')
+        item.link?.toLowerCase().endsWith('.jpeg') ||
+        item.link?.toLowerCase().endsWith('.png') ||
+        item.link?.toLowerCase().endsWith('.gif')
       );
       if (image) {
         return { success: true, url: image.link };
