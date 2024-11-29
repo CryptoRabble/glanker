@@ -235,7 +235,7 @@ async function findRelevantImage(tokenName) {
                link.endsWith('.jpeg') || 
                link.endsWith('.gif') || 
                link.endsWith('.png');
-      });
+      }); 
       if (image) {
         return { success: true, url: image.link };
       }
