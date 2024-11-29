@@ -25,22 +25,22 @@ const anthropic = new Anthropic({
 const tokenCache = new Map();
 
 async function getRootCast(hash) {
-  try {
-    const response = await neynar.lookupCastByHashOrWarpcastUrl({
-      type: 'hash',
-      identifier: hash
-    });
-    
-    return [{
-      text: response.cast.text,
-      castedAtTimestamp: response.cast.timestamp,
-      url: '', 
-      fid: response.cast.author.fid
-    }];
-  } catch (error) {
-    console.error('Error fetching root cast:', error);
-    return null;
-  }
+ try {
+   const response = await neynar.lookupCastByHashOrWarpcastUrl({
+     type: 'hash',
+     identifier: hash
+   });
+   
+   return [{
+     text: response.cast.text,
+     castedAtTimestamp: response.cast.timestamp,
+     url: '', 
+     fid: response.cast.author.fid
+   }];
+ } catch (error) {
+   console.error('Error fetching root cast:', error);
+   return null;
+ }
 }
 
 async function checkUserScore(fid) {
@@ -59,7 +59,32 @@ async function checkUserScore(fid) {
 async function handleMention(fid, replyToHash, castText, parentHash) {
  console.log('Handling mention from FID:', fid);
 
- // Get parent cast content first if it exists
+ // Check daily limit first
+ const cachedData = tokenCache.get(fid);
+ const now = Date.now();
+
+ if (cachedData && (now - cachedData.lastGenerated) < 24 * 60 * 60 * 1000) {
+   // Generate response if there's text
+   let userResponse = '';
+   const mentionText = castText.replace('@glanker', '').trim();
+   if (mentionText) {
+     const anthropicResponse = await anthropic.messages.create({
+       model: "claude-3-sonnet-20240229",
+       max_tokens: 150,
+       messages: [{
+         role: "user",
+         content: `You are glonky and your speech is barely coherent. Someone has said: "${mentionText}". Respond to what they said in 1-2 sentences. Keep the response brief but make it relevant to what they said. Here is an example of how you should sound: 
+         "Bruh... like... the air's, uh... heavy? But also, like... floatin'? And my... my feet, ... they're on the ground but, like, not really? Whoa, did you hear that? The grass is... humming."
+         Output ONLY the response. Nothing more.`
+       }]
+     });
+     userResponse = `${anthropicResponse.content[0].text}\n\n`;
+   }
+   await createCastWithReply(replyToHash, `${userResponse}Daily limit reached. Come back tomorrow!`);
+   return;
+ }
+
+ // Get parent cast content if it exists
  let parentCastText = '';
  if (parentHash) {
    const parentCast = await getRootCast(parentHash);
@@ -89,27 +114,16 @@ async function handleMention(fid, replyToHash, castText, parentHash) {
    userResponse = `${anthropicResponse.content[0].text}\n\n`;
  }
 
- // Check rate limit 
- const cachedData = tokenCache.get(fid);
- const now = Date.now();
-
- if (cachedData && (now - cachedData.lastGenerated) < 24 * 60 * 60 * 1000) {
-   await createCastWithReply(replyToHash, `${userResponse}\nDaily limit reached. Come back tomorrow!`);
-   return;
- }
-
  // Check user score before proceeding
  const hasValidScore = await checkUserScore(fid);
  if (!hasValidScore) {
-   await createCastWithReply(replyToHash, `${userResponse}\nSorry fren, you need a higher Neynar score to create tokens`, 
+   await createCastWithReply(replyToHash, `${userResponse}Sorry fren, you need a higher Neynar score to create tokens`, 
      "https://warpcast.com/rish/0x458f80e4" 
    );
    return;
  }
 
-
-
- // Get either root cast or user's casts
+ // Get either parent cast or user's casts
  let analysis;
  if (parentHash) {
    analysis = await getRootCast(parentHash);
@@ -124,15 +138,15 @@ async function handleMention(fid, replyToHash, castText, parentHash) {
  const imageResult = await findRelevantImage(tokenDetails.name);
 
  if (!imageResult.success) {
-   await createCastWithReply(replyToHash, `${userResponse}\nUh, I can only handle so much. Try again in an hour!`);
+   await createCastWithReply(replyToHash, `${userResponse}Uh, I can only handle so much. Try again in an hour!`);
    return;
  }
 
  tokenCache.set(fid, { lastGenerated: now });
 
  const message = parentHash 
- ? `${userResponse}Yo, this cast is spacey... here's a token based on it:\n\n@clanker create this token:\nName: ${tokenDetails.name}\nTicker: ${tokenDetails.ticker}`
- : `${userResponse}I checked out your casts... they're pretty glonky... here's a token based on your vibe:\n\n@clanker create this token:\nName: ${tokenDetails.name}\nTicker: ${tokenDetails.ticker}`;
+   ? `${userResponse}Yo, this cast is spacey... here's a token based on it:\n\n@clanker create this token:\nName: ${tokenDetails.name}\nTicker: ${tokenDetails.ticker}`
+   : `${userResponse}I checked out your casts... they're pretty glonky... here's a token based on your vibe:\n\n@clanker create this token:\nName: ${tokenDetails.name}\nTicker: ${tokenDetails.ticker}`;
  await createCastWithReply(replyToHash, message, imageResult.url);
 }
 
@@ -214,46 +228,45 @@ async function generateTokenDetails(posts) {
 }
 
 async function findRelevantImage(tokenName) {
-  try {
-    const response = await axios.get(
-      'https://api.imgur.com/3/gallery/search/top/all/0',
-      {
-        params: {
-          q: tokenName,
-        },
-        headers: {
-          'Authorization': `Client-ID ${process.env.IMGUR_CLIENT_ID}`
-        }
-      }
-    );
+ try {
+   const response = await axios.get(
+     'https://api.imgur.com/3/gallery/search/relevant/all/0',
+     {
+       params: {
+         q: tokenName,
+       },
+       headers: {
+         'Authorization': `Client-ID ${process.env.IMGUR_CLIENT_ID}`
+       }
+     }
+   );
 
-    if (response.data.data.length > 0) {
-      // Find first item that has a link ending in jpg, jpeg, or png (case insensitive)
-      const image = response.data.data.find(item => {
-        const link = item.link?.toLowerCase() || '';
-        return link.endsWith('.jpg') || 
-               link.endsWith('.jpeg') || 
-               link.endsWith('.gif') || 
-               link.endsWith('.png');
-      }); 
-      if (image) {
-        return { success: true, url: image.link };
-      }
-    }
-    return { 
-      success: true, 
-      url: 'https://i.imgur.com/aptQBum.jpeg' // Default fallback image
-    };
-  } catch (error) {
-    console.error('Imgur API error:', error);
-    if (error.response?.status === 429) {
-      return { success: false, error: 'RATE_LIMIT' };
-    }
-    return { 
-      success: true, 
-      url: 'https://i.imgur.com/aptQBum.jpeg' // Default fallback image
-    };
-  }
+   if (response.data.data.length > 0) {
+     const image = response.data.data.find(item => {
+       const link = item.link?.toLowerCase() || '';
+       return link.endsWith('.jpg') || 
+              link.endsWith('.jpeg') || 
+              link.endsWith('.gif') || 
+              link.endsWith('.png');
+     }); 
+     if (image) {
+       return { success: true, url: image.link };
+     }
+   }
+   return { 
+     success: true, 
+     url: 'https://i.imgur.com/aptQBum.jpeg'
+   };
+ } catch (error) {
+   console.error('Imgur API error:', error);
+   if (error.response?.status === 429) {
+     return { success: false, error: 'RATE_LIMIT' };
+   }
+   return { 
+     success: true, 
+     url: 'https://i.imgur.com/aptQBum.jpeg'
+   };
+ }
 }
 
 async function createCastWithReply(replyToHash, message, imageUrl) {
