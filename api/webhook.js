@@ -201,8 +201,9 @@ async function generateTokenDetails(posts) {
 
 async function findRelevantImage(tokenName) {
   try {
+    // Search gallery with better parameters
     const response = await axios.get(
-      'https://api.imgur.com/3/gallery/search',
+      'https://api.imgur.com/3/gallery/search/top/all/0',
       {
         params: {
           q: tokenName,
@@ -214,20 +215,25 @@ async function findRelevantImage(tokenName) {
     );
 
     if (response.data.data.length > 0) {
-      // Find first item that has a link ending in jpg, jpeg, or png (case insensitive)
-      const image = response.data.data.find(item => {
-        const link = item.link?.toLowerCase() || '';
-        return link.endsWith('.jpg') || 
-               link.endsWith('.jpeg') || 
-               link.endsWith('.png');
-      });
-      if (image) {
-        return { success: true, url: image.link };
+      // Process each gallery item
+      for (const item of response.data.data) {
+        // If it's an album, check the first image
+        if (item.is_album && item.images?.length > 0) {
+          const albumImage = item.images[0];
+          if (isValidImageFormat(albumImage.link)) {
+            return { success: true, url: albumImage.link };
+          }
+        }
+        // If it's a single image
+        else if (isValidImageFormat(item.link)) {
+          return { success: true, url: item.link };
+        }
       }
     }
-    // If no relevant images found, search for 'fun' images
+
+    // Fallback to 'fun' search with same logic
     const funResponse = await axios.get(
-      'https://api.imgur.com/3/gallery/search',
+      'https://api.imgur.com/3/gallery/search/top/all/0',
       {
         params: {
           q: 'fun',
@@ -239,35 +245,48 @@ async function findRelevantImage(tokenName) {
     );
 
     if (funResponse.data.data.length > 0) {
-      // Get random image from results that ends in jpg/jpeg/png
-      const validImages = funResponse.data.data.filter(item => {
-        const link = item.link?.toLowerCase() || '';
-        return link.endsWith('.jpg') || 
-               link.endsWith('.jpeg') || 
-               link.endsWith('.png');
-      });
+      const validImages = [];
+      
+      for (const item of funResponse.data.data) {
+        if (item.is_album && item.images?.length > 0) {
+          const albumImage = item.images[0];
+          if (isValidImageFormat(albumImage.link)) {
+            validImages.push(albumImage.link);
+          }
+        }
+        else if (isValidImageFormat(item.link)) {
+          validImages.push(item.link);
+        }
+      }
       
       if (validImages.length > 0) {
-        const randomImage = validImages[Math.floor(Math.random() * validImages.length)];
-        return { success: true, url: randomImage.link };
+        return { success: true, url: validImages[Math.floor(Math.random() * validImages.length)] };
       }
     }
-    
     // Fallback if everything fails
     return { 
       success: true, 
       url: 'https://i.imgur.com/XtntIZE.jpeg'
     };
- } catch (error) {
-   console.error('Imgur API error:', error);
-   if (error.response?.status === 429) {
-     return { success: false, error: 'RATE_LIMIT' };
-   }
-   return { 
-     success: true, 
-     url: 'https://i.imgur.com/aptQBum.jpeg'
-   };
- }
+  } catch (error) {
+    console.error('Imgur API error:', error);
+    if (error.response?.status === 429) {
+      return { success: false, error: 'RATE_LIMIT' };
+    }
+    return { 
+      success: true, 
+      url: 'https://i.imgur.com/aptQBum.jpeg'
+    };
+  }
+}
+
+// Helper function to check valid image formats
+function isValidImageFormat(link) {
+  const lowercaseLink = link?.toLowerCase() || '';
+  return lowercaseLink.endsWith('.jpg') || 
+         lowercaseLink.endsWith('.jpeg') || 
+         lowercaseLink.endsWith('.gif') || 
+         lowercaseLink.endsWith('.png');
 }
 
 async function createCastWithReply(replyToHash, message, imageUrl) {
