@@ -228,32 +228,30 @@ async function generateTokenDetails(posts) {
 }
 
 async function findRelevantImage(tokenName) {
- try {
-   const response = await axios.get(
-     'https://api.imgur.com/3/gallery/search/relevant/all/0',
-     {
-       params: {
-         q: tokenName,
-       },
-       headers: {
-         'Authorization': `Client-ID ${process.env.IMGUR_CLIENT_ID}`
-       }
-     }
-   );
+  try {
+    const response = await axios.get(
+      'https://api.imgur.com/3/gallery/search',
+      {
+        params: {
+          q: tokenName,
+        },
+        headers: {
+          'Authorization': `Client-ID ${process.env.IMGUR_CLIENT_ID}`
+        }
+      }
+    );
 
-   if (response.data.data.length > 0) {
-     const image = response.data.data.find(item => {
-       const link = item.link?.toLowerCase() || '';
-       return link.endsWith('.jpg') || 
-              link.endsWith('.jpeg') || 
-              link.endsWith('.gif') || 
-              link.endsWith('.png');
-     }); 
-     if (image) {
-       return { success: true, url: image.link };
-     }
-   }
-   return { 
+    if (response.data.data.length > 0) {
+      // Find first item that has a link ending in jpg or png (case insensitive)
+      const image = response.data.data.find(item => 
+        item.link?.toLowerCase().endsWith('.jpg') || 
+        item.link?.toLowerCase().endsWith('.png')
+      );
+      if (image) {
+        return { success: true, url: image.link };
+      }
+    }
+    return { 
      success: true, 
      url: 'https://i.imgur.com/aptQBum.jpeg'
    };
