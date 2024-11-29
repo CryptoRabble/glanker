@@ -30,20 +30,13 @@ async function getRootCast(hash) {
       type: 'hash',
       identifier: hash
     });
-    // Return the root cast if this is a reply
-    if (response.cast.parent_hash) {
-      const rootCast = await neynar.lookupCastByHashOrWarpcastUrl({
-        type: 'hash',
-        identifier: response.cast.root_parent_hash || response.cast.parent_hash
-      });
-      return [{
-        text: rootCast.cast.text,
-        castedAtTimestamp: rootCast.cast.timestamp,
-        url: '', 
-        fid: rootCast.cast.author.fid
-      }];
-    }
-    return null; 
+    
+    return [{
+      text: response.cast.text,
+      castedAtTimestamp: response.cast.timestamp,
+      url: '', 
+      fid: response.cast.author.fid
+    }];
   } catch (error) {
     console.error('Error fetching root cast:', error);
     return null;
@@ -66,7 +59,16 @@ async function checkUserScore(fid) {
 async function handleMention(fid, replyToHash, castText, parentHash) {
  console.log('Handling mention from FID:', fid);
 
- // Generate response to user text first
+ // Get parent cast content first if it exists
+ let parentCastText = '';
+ if (parentHash) {
+   const parentCast = await getRootCast(parentHash);
+   if (parentCast) {
+     parentCastText = parentCast[0].text;
+   }
+ }
+
+ // Generate response to user text
  let userResponse = '';
  const mentionText = castText.replace('@glanker', '').trim();
  if (mentionText) {
@@ -75,7 +77,11 @@ async function handleMention(fid, replyToHash, castText, parentHash) {
      max_tokens: 150,
      messages: [{
        role: "user",
-       content: `You are glonky and your speach is barely coherent. Someone has said: "${mentionText}". Respond to what they said in 1-2 sentence. Keep the response brief but make it relevant to what they said. Here is an example of how you should sound: 
+       content: `You are glonky and your speech is barely coherent. ${
+         parentCastText 
+           ? `Someone has posted: "${parentCastText}" and someone else replied asking: "${mentionText}".`
+           : `Someone has said: "${mentionText}".`
+       } Respond to what they said in 1-2 sentences. Keep the response brief but make it relevant to what they said. Here is an example of how you should sound: 
        "Bruh... like... the air's, uh... heavy? But also, like... floatin'? And my... my feet, ... they're on the ground but, like, not really? Whoa, did you hear that? The grass is... humming."
        Output ONLY the response. Nothing more.`
      }]
@@ -108,7 +114,7 @@ async function handleMention(fid, replyToHash, castText, parentHash) {
  if (parentHash) {
    analysis = await getRootCast(parentHash);
    if (!analysis) {
-     analysis = await analyzeCasts(fid); // Fallback to normal behavior
+     analysis = await analyzeCasts(fid);
    }
  } else {
    analysis = await analyzeCasts(fid);
