@@ -91,6 +91,8 @@ async function handleMention(fid, replyToHash, castText, parentHash) {
    return;
  }
 
+ tokenCache.set(fid, { lastGenerated: now });
+
  // Get parent cast content if it exists
  let parentCastText = '';
  if (parentHash) {
@@ -113,13 +115,6 @@ async function handleMention(fid, replyToHash, castText, parentHash) {
 
  const tokenDetails = await generateTokenDetails(analysis);
  const imageResult = await findRelevantImage(tokenDetails.name);
-
- if (!imageResult.success) {
-   await createCastWithReply(replyToHash, `${userResponse}Uh, I can only handle so much. Try again in an hour!`);
-   return;
- }
-
- tokenCache.set(fid, { lastGenerated: now });
 
  const message = parentHash 
    ? `${userResponse}Yo, this cast is spacey... here's a token based on it:\n\n@clanker create this token:\nName: ${tokenDetails.name}\nTicker: ${tokenDetails.ticker}`
