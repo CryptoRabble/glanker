@@ -27,18 +27,14 @@ const tokenCache = new Map();
 async function getRootCast(hash) {
   try {
     const response = await neynar.lookupCastByHashOrWarpcastUrl({
-      identifier: {
-        type: 'hash',
-        value: hash
-      }
+      type: 'hash',
+      identifier: hash
     });
     // Return the root cast if this is a reply
     if (response.cast.parent_hash) {
       const rootCast = await neynar.lookupCastByHashOrWarpcastUrl({
-        identifier: {
-          type: 'hash',
-          value: response.cast.root_parent_hash || response.cast.parent_hash
-        }
+        type: 'hash',
+        identifier: response.cast.root_parent_hash || response.cast.parent_hash
       });
       return [{
         text: rootCast.cast.text,
@@ -128,7 +124,7 @@ async function handleMention(fid, replyToHash, castText, parentHash) {
 
  tokenCache.set(fid, { lastGenerated: now });
 
- const message = `${userResponse}@clanker, create this token:\nName: ${tokenDetails.name}\nTicker: ${tokenDetails.ticker}`;
+ const message = `${userResponse} create this token:\nName: ${tokenDetails.name}\nTicker: ${tokenDetails.ticker}`;
  await createCastWithReply(replyToHash, message, imageResult.url);
 }
 
