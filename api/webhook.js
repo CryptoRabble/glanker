@@ -225,13 +225,17 @@ async function findRelevantImage(tokenName) {
     );
 
     if (response.data.data.length > 0) {
-      // Just take the first image that has a link
-      const image = response.data.data.find(item => item.link);
+      // Find first item that has a link ending in jpg, jpeg, png, or gif (case insensitive)
+      const image = response.data.data.find(item => 
+        item.link?.toLowerCase().endsWith('.jpg') || 
+        item.link?.toLowerCase().endsWith('.jpeg') ||
+        item.link?.toLowerCase().endsWith('.png') ||
+        item.link?.toLowerCase().endsWith('.gif')
+      );
       if (image) {
         return { success: true, url: image.link };
       }
     }
-    
     return { 
       success: true, 
       url: 'https://i.imgur.com/8nLFCVP.png' // Default fallback image
