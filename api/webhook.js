@@ -238,7 +238,7 @@ async function findRelevantImage(tokenName) {
     }
     return { 
       success: true, 
-      url: 'https://i.imgur.com/8nLFCVP.png' // Default fallback image
+      url: 'https://i.imgur.com/aptQBum.jpeg' // Default fallback image
     };
   } catch (error) {
     console.error('Imgur API error:', error);
@@ -247,7 +247,7 @@ async function findRelevantImage(tokenName) {
     }
     return { 
       success: true, 
-      url: 'https://i.imgur.com/8nLFCVP.png' // Default fallback image
+      url: 'https://i.imgur.com/aptQBum.jpeg' // Default fallback image
     };
   }
 }
