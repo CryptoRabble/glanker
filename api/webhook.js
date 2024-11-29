@@ -251,10 +251,39 @@ async function findRelevantImage(tokenName) {
         return { success: true, url: image.link };
       }
     }
+    // If no relevant images found, search for 'fun' images
+    const funResponse = await axios.get(
+      'https://api.imgur.com/3/gallery/search',
+      {
+        params: {
+          q: 'fun',
+        },
+        headers: {
+          'Authorization': `Client-ID ${process.env.IMGUR_CLIENT_ID}`
+        }
+      }
+    );
+
+    if (funResponse.data.data.length > 0) {
+      // Get random image from results that ends in jpg/jpeg/png
+      const validImages = funResponse.data.data.filter(item => {
+        const link = item.link?.toLowerCase() || '';
+        return link.endsWith('.jpg') || 
+               link.endsWith('.jpeg') || 
+               link.endsWith('.png');
+      });
+      
+      if (validImages.length > 0) {
+        const randomImage = validImages[Math.floor(Math.random() * validImages.length)];
+        return { success: true, url: randomImage.link };
+      }
+    }
+    
+    // Fallback if everything fails
     return { 
-     success: true, 
-     url: 'https://i.imgur.com/aptQBum.jpeg'
-   };
+      success: true, 
+      url: 'https://i.imgur.com/XtntIZE.jpeg'
+    };
  } catch (error) {
    console.error('Imgur API error:', error);
    if (error.response?.status === 429) {
