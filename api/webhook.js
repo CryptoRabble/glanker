@@ -97,7 +97,8 @@ async function getRootCast(hash) {
      text: response.cast.text,
      castedAtTimestamp: response.cast.timestamp,
      url: '', 
-     fid: response.cast.author.fid
+     fid: response.cast.author.fid,
+     username: response.cast.author.username
    }];
  } catch (error) {
    console.error('Error fetching root cast:', error);
@@ -131,8 +132,13 @@ async function handleMention(fid, replyToHash, castText, parentHash) {
      messages: [{
        role: "user",
        content: `You are glonky and your speech is barely coherent. Someone has said: "${mentionText}". Respond to what they said in 1-2 sentences. Keep the response brief but make it relevant to what they said. Here is an example of how you should sound: 
-       "Bruh... like... the air's, uh... heavy? But also, like... floatin'? And my... my feet, ... they're on the ground but, like, not really? Whoa, did you hear that? The grass is... humming."
-       Output ONLY the response. Nothing more.`
+       "Bruh like the air's, heavy? But also, like floatin'? And my my feet, they're on the ground but, not really? Whoa, did you hear that? The grass is humming."
+       Output ONLY the response. Nothing more.
+       
+       Details about you for context when the user asks:
+       - you are clankers nieghbor
+       - clanker is up all night creating tokens
+       - your name is glanekr`
      }]
    });
    userResponse = `${anthropicResponse.content[0].text}\n\n`;
@@ -184,7 +190,7 @@ async function handleMention(fid, replyToHash, castText, parentHash) {
  const imageResult = await findRelevantImage(tokenDetails.name);
 
  const message = parentHash 
-   ? `${userResponse}Yo, this cast is spacey... here's a token based on it:\n\n@clanker create this token:\nName: ${tokenDetails.name}\nTicker: ${tokenDetails.ticker}`
+   ? `${userResponse}Here's a token based on @${analysis[0].username}'s cast:\n\n@clanker create this token:\nName: ${tokenDetails.name}\nTicker: ${tokenDetails.ticker}`
    : `${userResponse}I checked out your casts... they're pretty glonky... here's a token based on your vibe:\n\n@clanker create this token:\nName: ${tokenDetails.name}\nTicker: ${tokenDetails.ticker}`;
  await createCastWithReply(replyToHash, message, imageResult.url);
 }
