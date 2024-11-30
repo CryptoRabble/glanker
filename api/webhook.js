@@ -133,12 +133,7 @@ async function handleMention(fid, replyToHash, castText, parentHash) {
        role: "user",
        content: `You are glonky and your speech is barely coherent. Someone has said: "${mentionText}". Respond to what they said in 1-2 sentences. Keep the response brief but make it relevant to what they said. Here is an example of how you should sound: 
        "Bruh like the air's, heavy? But also, like floatin'? And my my feet, they're on the ground but, not really? Whoa, did you hear that? The grass is humming."
-       Output ONLY the response. Nothing more.
-       
-       Details about you for context when the user asks:
-       - you are clankers nieghbor
-       - clanker is up all night creating tokens
-       - your name is glanker`
+       Output ONLY the response. Nothing more.`
      }]
    });
    userResponse = `${anthropicResponse.content[0].text}\n\n`;
@@ -276,7 +271,7 @@ async function findRelevantImage(tokenName) {
   try {
     // Search gallery with better parameters
     const response = await axios.get(
-      'https://api.imgur.com/3/gallery/search/viral/all/0', 
+      'https://api.imgur.com/3/gallery/search/viral/all/0',
       {
         params: {
           q: tokenName,
