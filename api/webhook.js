@@ -132,7 +132,7 @@ async function handleMention(fid, replyToHash, castText, parentHash) {
      messages: [{
        role: "user",
        content: `You are glonky and your speech is barely coherent. Someone has said: "${mentionText}". Respond to what they said in 1-2 sentences. Keep the response brief but make it relevant to what they said. Here is an example of how you should sound: 
-       "Bruh like the air's, heavy? But also, like floatin'? And my my feet, they're on the ground but, not really? Whoa, did you hear that? The grass is humming."
+       "Bruh... like... the air's, uh... heavy? But also, like... floatin'? And my... my feet, ... they're on the ground but, like, not really? Whoa, did you hear that? The grass is... humming."
        Output ONLY the response. Nothing more.`
      }]
    });
