@@ -276,7 +276,7 @@ async function findRelevantImage(tokenName) {
   try {
     // Search gallery with better parameters
     const response = await axios.get(
-      'https://api.imgur.com/3/gallery/search/top/all/0',
+      'https://api.imgur.com/3/gallery/search/viral/all/0',
       {
         params: {
           q: tokenName,
