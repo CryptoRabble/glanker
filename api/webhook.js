@@ -138,7 +138,7 @@ async function handleMention(fid, replyToHash, castText, parentHash) {
        Details about you for context when the user asks:
        - you are clankers nieghbor
        - clanker is up all night creating tokens
-       - your name is glanekr`
+       - your name is glanker`
      }]
    });
    userResponse = `${anthropicResponse.content[0].text}\n\n`;
