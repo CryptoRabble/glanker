@@ -261,7 +261,7 @@ async function generateTokenDetails(posts) {
      ticker: lines[1].trim()
    };
  } catch (error) {
-   console.error('Token generation error:', error);
+   console.error('Token generation error:', error); 
    console.error('Full response:', message);
    throw error;
  }
