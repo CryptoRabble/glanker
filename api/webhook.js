@@ -268,6 +268,22 @@ async function generateTokenDetails(posts) {
 }
 
 async function findRelevantImage(tokenName) {
+  const fallbackImages = [
+    'https://i.imgur.com/dXCgbhf.jpeg',
+    'https://i.imgur.com/lnRbvD9.gif',
+    'https://i.imgur.com/slREgBu.jpeg',
+    'https://i.imgur.com/BrQn0Je.gif', 
+    'https://i.imgur.com/JiyHuoN.jpeg',
+    'https://i.imgur.com/O5mM2kS.gif',
+    'https://i.imgur.com/ccMNJZp.gif',
+    'https://i.imgur.com/Ngh3qbn.png',
+    'https://i.imgur.com/x7N4krp.jpeg',
+    'https://i.imgur.com/ENS8ygh.jpeg',
+    'https://i.imgur.com/E3cJbZn.gif',
+    'https://i.imgur.com/FtiJaP7.jpeg',
+    'https://i.imgur.com/zYkVxwy.png'
+  ];
+
   try {
     // Search gallery with better parameters
     const response = await axios.get(
@@ -322,16 +338,17 @@ async function findRelevantImage(tokenName) {
     // Fallback if everything fails
     return { 
       success: true, 
-      url: 'https://i.imgur.com/XtntIZE.jpeg'
+      url: fallbackImages[Math.floor(Math.random() * fallbackImages.length)]
     };
   } catch (error) {
     console.error('Imgur API error:', error);
     if (error.response?.status === 429) {
       return { success: false, error: 'RATE_LIMIT' };
     }
+    
     return { 
       success: true, 
-      url: 'https://i.imgur.com/aptQBum.jpeg'
+      url: fallbackImages[Math.floor(Math.random() * fallbackImages.length)]
     };
   }
 }
