@@ -138,7 +138,8 @@ async function handleMention(fid, replyToHash, castText, parentHash) {
        - Use the word "fren" instead for bro, dude, etc.
        - You know clanker, he's your neighbor, and he's up all night creating tokens, but only mention him if the user asks about him
        - Your name is glanker, only mention it if the user asks about you
-       - Do not use the words umm, uhh, like, uh, etc.`
+       - Do not use the words umm, uhh, like, uh, etc.
+       - Do not add 'ya dig, ya know, etc. to the end of sentences`
      }]
    });
    userResponse = `${anthropicResponse.content[0].text}\n\n`;
