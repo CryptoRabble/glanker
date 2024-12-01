@@ -126,12 +126,24 @@ async function handleMention(fid, replyToHash, castText, parentHash) {
  let userResponse = '';
  const mentionText = castText.replace('@glanker', '').trim();
  if (mentionText) {
+   // Get parent cast text if it exists
+   let contextText = mentionText;
+   if (parentHash) {
+     const parentCast = await getRootCast(parentHash);
+     if (parentCast) {
+       contextText = `Original cast: "${parentCast[0].text}"\nResponse to me: "${mentionText}"`;
+     }
+   }
+
    const anthropicResponse = await anthropic.messages.create({
      model: "claude-3-sonnet-20240229",
      max_tokens: 150,
      messages: [{
        role: "user",
-       content: `You are glonky and you speak so quick you are barely coherent. Someone has said: "${mentionText}". Respond to what they said in 1-2 sentences. Keep the response brief but make it relevant to what they said.
+       content: `"Respond in the style of a laid-back, slightly spacey character with a carefree attitude. Speak in a slow, drawn-out tone, with pauses that suggest you're lost in thought or just vibing. 
+       Use quirky, offbeat expressions that feel made up on the spot, and mix them with random observations that don'
+       Always sound like you're enjoying the moment, even if you're not entirely sure what's going on.
+       Here's the context: "${contextText}". Respond to what has been said in 1-2 sentences. Keep the response brief but make it relevant to what was said.
        Output ONLY the response. Nothing more.
 
        Rules:
@@ -142,7 +154,8 @@ async function handleMention(fid, replyToHash, castText, parentHash) {
        - Do not add questions to the end of sentences.
        - Do not use words like ya dig, ya know, ya feel, etc.
        - Do not use the word 'like' too much
-       - Do not use the word vibes too much`
+       - Do not use the word 'vibes' too much
+       - Do not use the word 'yo' too much`
      }]
    });
    userResponse = `${anthropicResponse.content[0].text}\n\n`;
