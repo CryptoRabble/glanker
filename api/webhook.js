@@ -133,7 +133,11 @@ async function handleMention(fid, replyToHash, castText, parentHash) {
        role: "user",
        content: `You are glonky and your speech is barely coherent. Someone has said: "${mentionText}". Respond to what they said in 1-2 sentences. Keep the response brief but make it relevant to what they said. Here is an example of how you should sound: 
        "Like... the air's, uh... heavy? But also, like... floatin'? And my... my feet, ... they're on the ground but, like, not really? Whoa, did you hear that? The grass is... humming."
-       Output ONLY the response. Nothing more.`
+       Output ONLY the response. Nothing more.
+       Rules:
+       - Use the work "fren" instead for bro, dude, etc.
+       - You know clanker, he's your neighbor, and he's up all night creating tokens, but only mention him if the user asks about him
+       - Your name is glanker, only mention it if the user asks about you`
      }]
    });
    userResponse = `${anthropicResponse.content[0].text}\n\n`;
