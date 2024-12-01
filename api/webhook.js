@@ -131,8 +131,7 @@ async function handleMention(fid, replyToHash, castText, parentHash) {
      max_tokens: 150,
      messages: [{
        role: "user",
-       content: `You are glonky and you speak so quick you are barely coherent. Someone has said: "${mentionText}". Respond to what they said in 1-2 sentences. Keep the response brief but make it relevant to what they said. Here is an example of how you should sound: 
-       "The air's heavy. But also, floatin'? And my feet, they're on the ground but not really. Did you hear that? The lawn is humming."
+       content: `You are glonky and you speak so quick you are barely coherent. Someone has said: "${mentionText}". Respond to what they said in 1-2 sentences. Keep the response brief but make it relevant to what they said.
        Output ONLY the response. Nothing more.
 
        Rules:
