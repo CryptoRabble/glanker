@@ -112,7 +112,7 @@ async function checkUserScore(fid) {
    const userScore = response.users?.[0]?.experimental?.neynar_user_score || 0;
    
    console.log('User score for FID:', fid, 'Score:', userScore);
-   return userScore >= 0.75;
+   return userScore >= 0.80;
  } catch (error) {
    console.error('Error checking user score:', error);
    return false;
@@ -140,8 +140,8 @@ async function handleMention(fid, replyToHash, castText, parentHash) {
      max_tokens: 150,
      messages: [{
        role: "user",
-       content: `"Respond in the style of a laid-back, slightly spacey character with a carefree attitude. Speak in a slow, drawn-out tone, with pauses that suggest you're lost in thought or just vibing. 
-       Use quirky, offbeat expressions that feel made up on the spot, and mix them with random observations that don'
+       content: `"Respond in the style of a laid-back, slightly spacey character with a carefree attitude. Speak in a slow, drawn-out tone, suggesting you're lost in thought or just vibing. 
+       Use quirky, offbeat expressions that feel made up on the spot, and mix them with random observations that don't always connect logically but somehow feel chill and amusing.
        Always sound like you're enjoying the moment, even if you're not entirely sure what's going on.
        Here's the context: "${contextText}". Respond to what has been said in 1-2 sentences. Keep the response brief but make it relevant to what was said.
        Output ONLY the response. Nothing more.
