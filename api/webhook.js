@@ -299,37 +299,24 @@ async function findRelevantImage(tokenName) {
       }
     }
 
-    // Fallback to 'fun' search with same logic
-    const funResponse = await axios.get(
-      'https://api.imgur.com/3/gallery/search/top/all/0',
-      {
-        params: {
-          q: 'fun',
-        },
-        headers: {
-          'Authorization': `Client-ID ${process.env.IMGUR_CLIENT_ID}`
-        }
-      }
-    );
-
-    if (funResponse.data.data.length > 0) {
-      const validImages = [];
-      
-      for (const item of funResponse.data.data) {
-        if (item.is_album && item.images?.length > 0) {
-          const albumImage = item.images[0];
-          if (isValidImageFormat(albumImage.link)) {
-            validImages.push(albumImage.link);
+    // Fallback to Giphy search
+    try {
+      const giphyResponse = await axios.get(
+        `https://api.giphy.com/v1/gifs/search`,
+        {
+          params: {
+            api_key: process.env.GIPHY_API_KEY,
+            q: tokenName,
+            limit: 1
           }
         }
-        else if (isValidImageFormat(item.link)) {
-          validImages.push(item.link);
-        }
+      );
+
+      if (giphyResponse.data.data.length > 0) {
+        return { success: true, url: giphyResponse.data.data[0].images.original.url };
       }
-      
-      if (validImages.length > 0) {
-        return { success: true, url: validImages[Math.floor(Math.random() * validImages.length)] };
-      }
+    } catch (giphyError) {
+      console.error('Giphy API error:', giphyError);
     }
     
     // Fallback if everything fails
