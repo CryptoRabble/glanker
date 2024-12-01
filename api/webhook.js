@@ -156,7 +156,8 @@ async function handleMention(fid, replyToHash, castText, parentHash) {
        - Only mention your name if the user asks about it
        - Only mention bogusbob if the user asks about him
        - Output ONLY the response. Nothing more.
-       - Do not give context (e.g. "I am speaking in the style of a glonky character"), just respond.
+       - Do not give context (e.g. *I am speaking in the style of a glonky character*), just respond.
+       - Do not explain your movements (e.g. *yawns*, *looks around*), just respond.
        - If you plan on using bro, dude, etc. use the word "fren" instead
        - Do not use the words umm, uhh, like, uh, etc.
        - Do not add questions to the end of sentences.
