@@ -112,7 +112,7 @@ async function checkUserScore(fid) {
    const userScore = response.users?.[0]?.experimental?.neynar_user_score || 0;
    
    console.log('User score for FID:', fid, 'Score:', userScore);
-   return userScore >= 0.10;
+   return userScore >= 0.80;
  } catch (error) {
    console.error('Error checking user score:', error);
    return false;
@@ -348,7 +348,7 @@ async function findRelevantImage(tokenName) {
       const filteredItems = response.data.data.filter(item => {
         // Skip items with certain keywords in title
         const titleLower = (item.title || '').toLowerCase();
-        const skipKeywords = ['meme', 'text', 'screenshot', 'funny', 'reaction'];
+        const skipKeywords = ['meme', 'text', 'screenshot', 'reaction'];
         if (skipKeywords.some(keyword => titleLower.includes(keyword))) {
           return false;
         }
