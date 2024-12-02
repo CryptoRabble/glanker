@@ -384,13 +384,18 @@ async function findRelevantImage(tokenName) {
           params: {
             api_key: process.env.GIPHY_API_KEY,
             q: tokenName,
-            limit: 1
+            limit: 10
           }
         }
       );
 
       if (giphyResponse.data.data.length > 0) {
-        return { success: true, url: giphyResponse.data.data[0].images.original.url };
+        // Randomly select one from available results
+        const randomIndex = Math.floor(Math.random() * giphyResponse.data.data.length);
+        return { 
+          success: true, 
+          url: giphyResponse.data.data[randomIndex].images.original.url 
+        };
       }
     } catch (giphyError) {
       console.error('Giphy API error:', giphyError);
