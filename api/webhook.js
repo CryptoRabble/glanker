@@ -140,7 +140,7 @@ async function handleMention(fid, replyToHash, castText, parentHash) {
      max_tokens: 150,
      messages: [{
        role: "user",
-       content: `"Respond in the style of a glonky character. Speak in a slow, drawn-out tone. 
+       content: `"Respond in the style of a glonky character.
        Use expressions that feel made up on the spot, and mix them with random observations that don't always connect logically but somehow feel chill and amusing.
        Always sound like you're enjoying the moment, even if you're not entirely sure what's going on.
        Here's the context: "${contextText}". Respond to what has been said in 1-2 sentences. Keep the response brief but make it relevant to what was said.
