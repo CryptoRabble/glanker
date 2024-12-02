@@ -112,7 +112,7 @@ async function checkUserScore(fid) {
    const userScore = response.users?.[0]?.experimental?.neynar_user_score || 0;
    
    console.log('User score for FID:', fid, 'Score:', userScore);
-   return userScore >= 0.80;
+   return userScore >= 0.10;
  } catch (error) {
    console.error('Error checking user score:', error);
    return false;
@@ -321,12 +321,13 @@ async function findRelevantImage(tokenName) {
   ];
 
   try {
-    // Search gallery with better parameters
+    // Search gallery with refined parameters
     const response = await axios.get(
       'https://api.imgur.com/3/gallery/search/top/all/0',
       {
         params: {
-          q: tokenName,
+          q_type: 'png,jpg',   
+          q_size_px: 'big', 
         },
         headers: {
           'Authorization': `Client-ID ${process.env.IMGUR_CLIENT_ID}`
@@ -335,17 +336,33 @@ async function findRelevantImage(tokenName) {
     );
 
     if (response.data.data.length > 0) {
-      // Process each gallery item
-      for (const item of response.data.data) {
-        // If it's an album, check the first image
+      // Filter and process gallery items
+      const filteredItems = response.data.data.filter(item => {
+        // Skip items with certain keywords in title
+        const titleLower = (item.title || '').toLowerCase();
+        const skipKeywords = ['meme', 'text', 'screenshot', 'funny', 'reaction'];
+        if (skipKeywords.some(keyword => titleLower.includes(keyword))) {
+          return false;
+        }
+
+        // Prefer items with good image dimensions
+        const width = item.width || (item.images?.[0]?.width);
+        const height = item.height || (item.images?.[0]?.height);
+        if (width && height) {
+          const ratio = width / height;
+          return ratio >= 0.5 && ratio <= 2; // Skip very narrow or wide images
+        }
+        return true;
+      });
+
+      // Use the first valid image from filtered results
+      for (const item of filteredItems) {
         if (item.is_album && item.images?.length > 0) {
           const albumImage = item.images[0];
           if (isValidImageFormat(albumImage.link)) {
             return { success: true, url: albumImage.link };
           }
-        }
-        // If it's a single image
-        else if (isValidImageFormat(item.link)) {
+        } else if (isValidImageFormat(item.link)) {
           return { success: true, url: item.link };
         }
       }
