@@ -317,7 +317,16 @@ async function findRelevantImage(tokenName) {
     'https://i.imgur.com/ENS8ygh.jpeg',
     'https://i.imgur.com/E3cJbZn.gif',
     'https://i.imgur.com/FtiJaP7.jpeg',
-    'https://i.imgur.com/zYkVxwy.png'
+    'https://i.imgur.com/zYkVxwy.png',
+    'https://i.imgur.com/vbJqU9C.png',
+    'https://i.imgur.com/lqTBTPP.gif',
+    'https://i.imgur.com/6555555.gif',
+    'https://i.imgur.com/7BdWTRf.jpeg',
+    'https://i.imgur.com/ujwrGAR.jpeg',
+    'https://i.imgur.com/vjGQrBI.gif',
+    'https://i.imgur.com/MkpU3JJ.jpeg',
+    'https://i.imgur.com/QdJTA68.jpeg'
+
   ];
 
   try {
