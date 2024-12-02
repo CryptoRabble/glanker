@@ -326,8 +326,7 @@ async function findRelevantImage(tokenName) {
       'https://api.imgur.com/3/gallery/search/top/all/0',
       {
         params: {
-          q_type: 'png,jpg',   
-          q_size_px: 'big', 
+          q_type: 'png,jpg,gif', 
         },
         headers: {
           'Authorization': `Client-ID ${process.env.IMGUR_CLIENT_ID}`
