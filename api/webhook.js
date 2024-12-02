@@ -336,6 +336,8 @@ async function findRelevantImage(tokenName) {
       {
         params: {
           q: tokenName,
+          q_type: 'jpg,png,gif,anigif',
+          q_not: 'meme text screenshot',
         },
         headers: {
           'Authorization': `Client-ID ${process.env.IMGUR_CLIENT_ID}`
@@ -348,7 +350,7 @@ async function findRelevantImage(tokenName) {
       const filteredItems = response.data.data.filter(item => {
         // Skip items with certain keywords in title
         const titleLower = (item.title || '').toLowerCase();
-        const skipKeywords = ['meme', 'text', 'screenshot', 'reaction'];
+        const skipKeywords = ['reaction'];
         if (skipKeywords.some(keyword => titleLower.includes(keyword))) {
           return false;
         }
@@ -367,11 +369,8 @@ async function findRelevantImage(tokenName) {
       const validImageUrls = [];
       for (const item of filteredItems) {
         if (item.is_album && item.images?.length > 0) {
-          const albumImage = item.images[0];
-          if (isValidImageFormat(albumImage.link)) {
-            validImageUrls.push(albumImage.link);
-          }
-        } else if (isValidImageFormat(item.link)) {
+          validImageUrls.push(item.images[0].link);
+        } else {
           validImageUrls.push(item.link);
         }
       }
@@ -425,15 +424,6 @@ async function findRelevantImage(tokenName) {
       url: fallbackImages[Math.floor(Math.random() * fallbackImages.length)]
     };
   }
-}
-
-// Helper function to check valid image formats
-function isValidImageFormat(link) {
-  const lowercaseLink = link?.toLowerCase() || '';
-  return lowercaseLink.endsWith('.jpg') || 
-         lowercaseLink.endsWith('.jpeg') || 
-         lowercaseLink.endsWith('.gif') || 
-         lowercaseLink.endsWith('.png');
 }
 
 async function createCastWithReply(replyToHash, message, imageUrl) {
