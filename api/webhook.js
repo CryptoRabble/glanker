@@ -215,9 +215,14 @@ async function handleMention(fid, replyToHash, castText, parentHash) {
  const tokenDetails = await generateTokenDetails(analysis);
  const imageResult = await findRelevantImage(tokenDetails.name);
 
+ // Check if the cast contains bogus-related keywords
+ const shouldTagBogusbob = castText.toLowerCase().includes('bogus') || 
+                          castText.toLowerCase().includes('bogusbob');
+ const taggedPerson = shouldTagBogusbob ? '@bogusbob' : '@clanker';
+
  const message = parentHash 
-   ? `${userResponse}Here's a token based on @${analysis[0].username}'s cast:\n\n@clanker create this token:\nName: ${tokenDetails.name}\nTicker: ${tokenDetails.ticker}`
-   : `${userResponse}I checked out your casts... they're pretty glonky... here's a token based on your vibe:\n\n@clanker create this token:\nName: ${tokenDetails.name}\nTicker: ${tokenDetails.ticker}`;
+   ? `${userResponse}Here's a token based on @${analysis[0].username}'s cast:\n\n${taggedPerson} create this token:\nName: ${tokenDetails.name}\nTicker: ${tokenDetails.ticker}`
+   : `${userResponse}I checked out your casts... they're pretty glonky... here's a token based on your vibe:\n\n${taggedPerson} create this token:\nName: ${tokenDetails.name}\nTicker: ${tokenDetails.ticker}`;
  await createCastWithReply(replyToHash, message, imageResult.url);
 }
 
