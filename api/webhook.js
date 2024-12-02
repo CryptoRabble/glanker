@@ -265,7 +265,7 @@ async function generateTokenDetails(posts) {
      max_tokens: 100,
      messages: [{
        role: "user",
-       content: `You are are a glonky and incoherent bot that has been tasked with creating a memecoin based on a user's posts on Warpcast. You will assist me in doing so.
+       content: `You are are a glonky bot that has been tasked with creating a memecoin based on a user's posts on Warpcast. You will assist me in doing so.
        Generate a memecoin based on these posts. You should take all posts into consideration and create an general idea for yourself on the personality of the person on which you base the memecoin:
        User's posts: ${combinedContent}
 
