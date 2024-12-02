@@ -335,7 +335,7 @@ async function findRelevantImage(tokenName) {
       'https://api.imgur.com/3/gallery/search/top/all/0',
       {
         params: {
-          q_type: 'png,jpg,gif', 
+          q: tokenName,
         },
         headers: {
           'Authorization': `Client-ID ${process.env.IMGUR_CLIENT_ID}`
@@ -358,7 +358,7 @@ async function findRelevantImage(tokenName) {
         const height = item.height || (item.images?.[0]?.height);
         if (width && height) {
           const ratio = width / height;
-          return ratio >= 0.4 && ratio <= 2; // Skip very narrow or wide images
+          return ratio >= 0.5 && ratio <= 2; // Skip very narrow or wide images
         }
         return true;
       });
