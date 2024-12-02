@@ -363,16 +363,24 @@ async function findRelevantImage(tokenName) {
         return true;
       });
 
-      // Use the first valid image from filtered results
+      // Collect all valid image URLs
+      const validImageUrls = [];
       for (const item of filteredItems) {
         if (item.is_album && item.images?.length > 0) {
           const albumImage = item.images[0];
           if (isValidImageFormat(albumImage.link)) {
-            return { success: true, url: albumImage.link };
+            validImageUrls.push(albumImage.link);
           }
         } else if (isValidImageFormat(item.link)) {
-          return { success: true, url: item.link };
+          validImageUrls.push(item.link);
         }
+      }
+
+      // Randomly select from valid images (up to 10)
+      const topTenUrls = validImageUrls.slice(0, 10);
+      if (topTenUrls.length > 0) {
+        const randomUrl = topTenUrls[Math.floor(Math.random() * topTenUrls.length)];
+        return { success: true, url: randomUrl };
       }
     }
 
