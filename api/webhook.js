@@ -358,7 +358,7 @@ async function findRelevantImage(tokenName) {
         const height = item.height || (item.images?.[0]?.height);
         if (width && height) {
           const ratio = width / height;
-          return ratio >= 0.5 && ratio <= 2; // Skip very narrow or wide images
+          return ratio >= 0.4 && ratio <= 2; // Skip very narrow or wide images
         }
         return true;
       });
