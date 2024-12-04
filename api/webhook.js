@@ -336,42 +336,35 @@ async function findRelevantImage(tokenName) {
       'https://api.imgur.com/3/gallery/search/top/all/0',
       {
         params: {
-          q: tokenName,
-          q_type: 'jpg,png,gif,anigif',
+          q: `${tokenName}`,
           sort: 'top',
-          q_not: 'meme text screenshot nsfw porn xxx adult',
+          window: 'all',
+          q_type: 'jpg,png,gif,anigif',
+          q_not: 'nsfw porn xxx adult meme text screenshot reaction'
         },
         headers: {
           'Authorization': `Client-ID ${process.env.IMGUR_CLIENT_ID}`
         }
       }
     );
-
+    
     if (response.data.data.length > 0) {
-      // Filter and process gallery items
+      // First filter out unwanted items
       const filteredItems = response.data.data.filter(item => {
-        // Skip items with certain keywords in title
         const titleLower = (item.title || '').toLowerCase();
-        const skipKeywords = ['reaction'];
-        if (skipKeywords.some(keyword => titleLower.includes(keyword))) {
-          return false;
-        }
+        const skipKeywords = ['reaction', 'meme', 'screenshot'];
+        return !skipKeywords.some(keyword => titleLower.includes(keyword));
       });
-
-      // Collect all valid image URLs
-      const validImageUrls = [];
-      for (const item of filteredItems) {
-        if (item.is_album && item.images?.length > 0) {
-          validImageUrls.push(item.images[0].link);
-        } else {
-          validImageUrls.push(item.link);
-        }
-      }
-
-      // Randomly select from valid images (up to 3)
-      const topTenUrls = validImageUrls.slice(0, 3);
-      if (topTenUrls.length > 0) {
-        const randomUrl = topTenUrls[Math.floor(Math.random() * topTenUrls.length)];
+    
+      // Get valid image URLs from filtered items
+      const validImageUrls = filteredItems.map(item => 
+        item.is_album && item.images?.length > 0 ? item.images[0].link : item.link
+      );
+    
+      // Take top 3 and randomly select one
+      const topThree = validImageUrls.slice(0, 3);
+      if (topThree.length > 0) {
+        const randomUrl = topThree[Math.floor(Math.random() * topThree.length)];
         return { success: true, url: randomUrl };
       }
     }
