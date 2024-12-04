@@ -338,7 +338,8 @@ async function findRelevantImage(tokenName) {
         params: {
           q: tokenName,
           q_type: 'jpg,png,gif,anigif',
-          q_not: 'meme text screenshot',
+          sort: 'top',
+          q_not: 'meme text screenshot nsfw porn xxx adult',
         },
         headers: {
           'Authorization': `Client-ID ${process.env.IMGUR_CLIENT_ID}`
@@ -355,15 +356,6 @@ async function findRelevantImage(tokenName) {
         if (skipKeywords.some(keyword => titleLower.includes(keyword))) {
           return false;
         }
-
-        // Prefer items with good image dimensions
-        const width = item.width || (item.images?.[0]?.width);
-        const height = item.height || (item.images?.[0]?.height);
-        if (width && height) {
-          const ratio = width / height;
-          return ratio >= 0.5 && ratio <= 2; // Skip very narrow or wide images
-        }
-        return true;
       });
 
       // Collect all valid image URLs
