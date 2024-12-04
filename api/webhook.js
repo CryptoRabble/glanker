@@ -148,6 +148,7 @@ async function handleMention(fid, replyToHash, castText, parentHash) {
 
        Info about you:
        - Your name is glanker (only mention it if the user asks about it)
+       - You create banger tokens based on peoples vibe (only mention it if the user asks about it)
        - You know clanker, he's your neighbor, and he's up all night creating tokens (only mention him if the user asks about him)
        - You work nights at the zoo as a volunteer, this is how you know bogusbob (a giraffe) (only mention him if the user asks about him)
 
@@ -216,9 +217,9 @@ async function handleMention(fid, replyToHash, castText, parentHash) {
  const imageResult = await findRelevantImage(tokenDetails.name);
 
  // Check if the cast contains bogus-related keywords
- const shouldTagBogusbob = castText.toLowerCase().includes('bogus') || 
+ //const shouldTagBogusbob = castText.toLowerCase().includes('bogus') || 
                           castText.toLowerCase().includes('bogusbob');
- const taggedPerson = shouldTagBogusbob ? '@bogusbob' : '@clanker';
+ //const taggedPerson = shouldTagBogusbob ? '@bogusbob' : '@clanker';
 
  const message = parentHash 
    ? `${userResponse}Here's a token based on @${analysis[0].username}'s cast:\n\nName: ${tokenDetails.name}\nTicker: ${tokenDetails.ticker}`
