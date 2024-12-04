@@ -337,7 +337,7 @@ async function findRelevantImage(tokenName) {
       {
         params: {
           q: tokenName,
-          q_type: 'jpg,png,gif,anigif',
+          q_type: 'jpg,png',
           sort: 'top',
           q_not: 'meme text screenshot nsfw porn xxx adult',
         },
