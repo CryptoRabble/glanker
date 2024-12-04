@@ -112,7 +112,7 @@ async function checkUserScore(fid) {
    const userScore = response.users?.[0]?.experimental?.neynar_user_score || 0;
    
    console.log('User score for FID:', fid, 'Score:', userScore);
-   return userScore >= 0.10;
+   return userScore >= 0.80;
  } catch (error) {
    console.error('Error checking user score:', error);
    return false;
@@ -376,8 +376,8 @@ async function findRelevantImage(tokenName) {
         }
       }
 
-      // Randomly select from valid images (up to 10)
-      const topTenUrls = validImageUrls.slice(0, 10);
+      // Randomly select from valid images (up to 3)
+      const topTenUrls = validImageUrls.slice(0, 3);
       if (topTenUrls.length > 0) {
         const randomUrl = topTenUrls[Math.floor(Math.random() * topTenUrls.length)];
         return { success: true, url: randomUrl };
