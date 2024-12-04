@@ -112,7 +112,7 @@ async function checkUserScore(fid) {
    const userScore = response.users?.[0]?.experimental?.neynar_user_score || 0;
    
    console.log('User score for FID:', fid, 'Score:', userScore);
-   return userScore >= 0.10;
+   return userScore >= 0.80;
  } catch (error) {
    console.error('Error checking user score:', error);
    return false;
@@ -221,8 +221,8 @@ async function handleMention(fid, replyToHash, castText, parentHash) {
  const taggedPerson = shouldTagBogusbob ? '@bogusbob' : '@clanker';
 
  const message = parentHash 
-   ? `${userResponse}Here's a token based on @${analysis[0].username}'s cast:\n\n${taggedPerson} create this token:\nName: ${tokenDetails.name}\nTicker: ${tokenDetails.ticker}`
-   : `${userResponse}I checked out your casts... they're pretty glonky... here's a token based on your vibe:\n\n${taggedPerson} create this token:\nName: ${tokenDetails.name}\nTicker: ${tokenDetails.ticker}`;
+   ? `${userResponse}Here's a token based on @${analysis[0].username}'s cast:\n\nName: ${tokenDetails.name}\nTicker: ${tokenDetails.ticker}`
+   : `${userResponse}I checked out your casts... they're pretty glonky... here's a token based on your vibe:\nName: ${tokenDetails.name}\nTicker: ${tokenDetails.ticker}`;
  await createCastWithReply(replyToHash, message, imageResult.url);
 }
 
