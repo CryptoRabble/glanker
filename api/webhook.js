@@ -319,13 +319,16 @@ async function generateTokenDetails(posts) {
 async function searchImage(tokenName) {
   try {
     const response = await axios.get(
-      'https://api.imgur.com/3/gallery/search/viral/all/0',
+      'https://api.imgur.com/3/gallery/search',
       {
         params: {
           q: tokenName,
+          sort: 'score',  // Changed to score to match imgur.com's default search
           window: 'all',
           q_type: 'jpg,png,gif,anigif',
-          q_not: 'nsfw porn xxx adult meme text reaction'
+          q_not: 'screenshotmeme text reaction',
+          page: 0,
+          mature: false
         },
         headers: {
           'Authorization': `Client-ID ${process.env.IMGUR_CLIENT_ID}`
@@ -342,7 +345,12 @@ async function searchImage(tokenName) {
 
       const validImageUrls = [];
       for (const item of filteredItems) {
-        const imageToCheck = item.is_album ? item.images?.[0] : item;
+        // Check if it's an album and has images
+        if (item.is_album && (!item.images || item.images.length === 0)) {
+          continue;
+        }
+        
+        const imageToCheck = item.is_album ? item.images[0] : item;
         
         if (imageToCheck && 
             imageToCheck.width >= 400 && 
@@ -351,6 +359,8 @@ async function searchImage(tokenName) {
           validImageUrls.push(item.is_album ? item.images[0].link : item.link);
         }
       }
+
+      console.log(`Found ${validImageUrls.length} valid images for "${tokenName}"`);
 
       const topUrls = validImageUrls.slice(0, 10);
       if (topUrls.length > 0) {
