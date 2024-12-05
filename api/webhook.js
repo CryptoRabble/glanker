@@ -326,7 +326,7 @@ async function searchImage(tokenName) {
           sort: 'score',  // Changed to score to match imgur.com's default search
           window: 'all',
           q_type: 'jpg,png,gif,anigif',
-          q_not: 'screenshotmeme text reaction',
+          q_not: 'screenshot meme text reaction',
           page: 0,
           mature: false
         },
