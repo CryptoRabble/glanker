@@ -319,15 +319,13 @@ async function generateTokenDetails(posts) {
 async function searchImage(tokenName) {
   try {
     const response = await axios.get(
-      'https://api.imgur.com/3/gallery/search/top/all/0',
+      'https://api.imgur.com/3/gallery/search/viral/all/0',
       {
         params: {
           q: tokenName,
-          sort: 'top',
           window: 'all',
           q_type: 'jpg,png,gif,anigif',
-          q_size_px: 'med,big',
-          q_not: 'nsfw porn xxx adult meme text screenshot reaction'
+          q_not: 'nsfw porn xxx adult meme text reaction'
         },
         headers: {
           'Authorization': `Client-ID ${process.env.IMGUR_CLIENT_ID}`
@@ -338,7 +336,7 @@ async function searchImage(tokenName) {
     if (response.data.data.length > 0) {
       const filteredItems = response.data.data.filter(item => {
         const titleLower = (item.title || '').toLowerCase();
-        const skipKeywords = ['reaction', 'meme', 'screenshot', 'nsfw', 'porn', 'xxx', 'adult'];
+        const skipKeywords = ['reaction', 'meme', 'nsfw', 'porn', 'xxx', 'adult'];
         return !skipKeywords.some(keyword => titleLower.includes(keyword));
       });
 
