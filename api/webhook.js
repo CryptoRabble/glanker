@@ -324,52 +324,7 @@ async function generateTokenDetails(posts) {
 }
 
 async function searchImage(tokenName) {
-  try {
-    const imgurResponse = await axios.get(
-      `https://api.imgur.com/3/gallery/search`,
-      {
-        headers: {
-          'Authorization': `Client-ID ${process.env.IMGUR_CLIENT_ID}`
-        },
-        params: {
-          q: tokenName,
-          sort: 'top'  // Sort by highest rated content
-        }
-      }
-    );
-
-    if (imgurResponse.data.data.length > 0) {
-      // Filter for appropriate images
-      const imgurResults = imgurResponse.data.data.filter(item => 
-        !item.is_album && 
-        item.width >= 200 && 
-        item.height >= 200 &&
-        !item.nsfw &&
-        item.link
-      );
-      
-      if (imgurResults.length > 0) {
-        // Sort by views/score to get most popular
-        imgurResults.sort((a, b) => {
-          const aScore = (a.score || 0) + (a.views || 0) / 1000;
-          const bScore = (b.score || 0) + (b.views || 0) / 1000;
-          return bScore - aScore;
-        });
-
-        // Take one of the top 5 results
-        const topResults = imgurResults.slice(0, 5);
-        const randomIndex = Math.floor(Math.random() * topResults.length);
-        return {
-          success: true,
-          url: topResults[randomIndex].link
-        };
-      }
-    }
-  } catch (imgurError) {
-    console.error('Imgur API error:', imgurError);
-  }
-
-  // Fall back to Giphy
+  // Try Giphy first
   try {
     const giphyResponse = await axios.get(
       'https://api.giphy.com/v1/gifs/search',
@@ -378,7 +333,7 @@ async function searchImage(tokenName) {
           api_key: process.env.GIPHY_API_KEY,
           q: tokenName,
           limit: 10,
-          rating: 'g'
+          rating: 'pg'
         }
       }
     );
@@ -400,12 +355,49 @@ async function searchImage(tokenName) {
   } catch (giphyError) {
     console.error('Giphy API error:', giphyError);
   }
-  
-  // Fall back to default images if both APIs fail
-  return { 
-    success: true, 
-    url: fallbackImages[Math.floor(Math.random() * fallbackImages.length)]
-  };
+
+  // Fall back to Imgur if Giphy fails
+  try {
+    const imgurResponse = await axios.get(
+      `https://api.imgur.com/3/gallery/search`,
+      {
+        headers: {
+          'Authorization': `Client-ID ${process.env.IMGUR_CLIENT_ID}`
+        },
+        params: {
+          q: tokenName,
+          sort: 'top'
+        }
+      }
+    );
+
+    if (imgurResponse.data.data.length > 0) {
+      const imgurResults = imgurResponse.data.data.filter(item => 
+        !item.is_album && 
+        item.width >= 200 && 
+        item.height >= 200 &&
+        !item.nsfw &&
+        item.link
+      );
+      
+      if (imgurResults.length > 0) {
+        imgurResults.sort((a, b) => {
+          const aScore = (a.score || 0) + (a.views || 0) / 1000;
+          const bScore = (b.score || 0) + (b.views || 0) / 1000;
+          return bScore - aScore;
+        });
+
+        const topResults = imgurResults.slice(0, 5);
+        const randomIndex = Math.floor(Math.random() * topResults.length);
+        return {
+          success: true,
+          url: topResults[randomIndex].link
+        };
+      }
+    }
+  } catch (imgurError) {
+    console.error('Imgur API error:', imgurError);
+  }
 }
 
 async function findRelevantImage(tokenName) {
