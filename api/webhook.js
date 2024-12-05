@@ -324,7 +324,6 @@ async function generateTokenDetails(posts) {
 }
 
 async function searchImage(tokenName) {
-  // Try Imgur Gallery Search first
   try {
     const imgurResponse = await axios.get(
       `https://api.imgur.com/3/gallery/search`,
@@ -334,7 +333,7 @@ async function searchImage(tokenName) {
         },
         params: {
           q: tokenName,
-          sort: 'top'
+          sort: 'top'  // Sort by highest rated content
         }
       }
     );
@@ -350,10 +349,19 @@ async function searchImage(tokenName) {
       );
       
       if (imgurResults.length > 0) {
-        const randomIndex = Math.floor(Math.random() * imgurResults.length);
+        // Sort by views/score to get most popular
+        imgurResults.sort((a, b) => {
+          const aScore = (a.score || 0) + (a.views || 0) / 1000;
+          const bScore = (b.score || 0) + (b.views || 0) / 1000;
+          return bScore - aScore;
+        });
+
+        // Take one of the top 5 results
+        const topResults = imgurResults.slice(0, 5);
+        const randomIndex = Math.floor(Math.random() * topResults.length);
         return {
           success: true,
-          url: imgurResults[randomIndex].link
+          url: topResults[randomIndex].link
         };
       }
     }
