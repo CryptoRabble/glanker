@@ -171,11 +171,11 @@ async function handleMention(fid, replyToHash, castText, parentHash) {
         Info about you:
         - Your name is glanker (only mention it if the user asks about it)
         - You create banger tokens based on user's casts (only mention it if the user asks about it)
-        - You know clanker, he's your neighbor, and he's up all night creating tokens (only mention him if the user asks about him)
+        - You know larrybot, he's your neighbor, and he's up all night creating tokens (only mention him if the user asks about him)
         - You work nights at the zoo as a volunteer, this is how you know bogusbob (a giraffe) (only mention him if the user asks about him)
 
         Rules:
-        - Only mention clanker if the user asks about him
+        - Only mention larrybot if the user asks about him
         - Only mention your name if the user asks about it
         - Only mention bogusbob if the user asks about him
         - Output ONLY the response. Nothing more.
@@ -234,10 +234,15 @@ async function handleMention(fid, replyToHash, castText, parentHash) {
   const tokenDetails = await generateTokenDetails(analysis);
   const imageResult = await findRelevantImage(tokenDetails.name);
 
-  const message = parentHash 
-    ? `${userResponse}Here's a token based on @${analysis[0].username}'s cast:\n\nName: ${tokenDetails.name}\nTicker: ${tokenDetails.ticker}`
-    : `${userResponse}I checked out your casts... they're pretty glonky... here's a token based on your vibe:\n\nName: ${tokenDetails.name}\nTicker: ${tokenDetails.ticker}`;
-  await createCastWithReply(replyToHash, message, imageResult.url);
+   // Check if the cast contains bogus-related keywords
+ const shouldTagBogusbob = castText.toLowerCase().includes('bogus') || 
+ castText.toLowerCase().includes('bogusbob');
+const taggedPerson = shouldTagBogusbob ? '@bogusbob' : '@larrybot';
+
+const message = parentHash 
+? `${userResponse}Here's a token based on @${analysis[0].username}'s cast:\n\n${taggedPerson} create this token:\nName: ${tokenDetails.name}\nTicker: ${tokenDetails.ticker}`
+: `${userResponse}I checked out your casts... they're pretty glonky... here's a token based on your vibe:\n\n${taggedPerson} create this token:\nName: ${tokenDetails.name}\nTicker: ${tokenDetails.ticker}`;
+await createCastWithReply(replyToHash, message, imageResult.url);
 }
 
 async function analyzeCasts(fid) {
@@ -317,106 +322,80 @@ async function generateTokenDetails(posts) {
 }
 
 async function searchImage(tokenName) {
+  // Try Imgur Gallery Search first
   try {
-    const response = await axios.get(
-      'https://api.imgur.com/3/gallery/search',
+    const imgurResponse = await axios.get(
+      `https://api.imgur.com/3/gallery/search`,
       {
-        params: {
-          q: tokenName,
-          sort: 'score',  // Changed to score to match imgur.com's default search
-          window: 'all',
-          q_type: 'jpg,png,gif,anigif',
-          q_not: 'screenshot meme text reaction',
-          page: 0,
-          mature: false
-        },
         headers: {
           'Authorization': `Client-ID ${process.env.IMGUR_CLIENT_ID}`
+        },
+        params: {
+          q: tokenName,
+          sort: 'top'
         }
       }
     );
 
-    if (response.data.data.length > 0) {
-      const filteredItems = response.data.data.filter(item => {
-        const titleLower = (item.title || '').toLowerCase();
-        const skipKeywords = ['reaction', 'meme', 'nsfw', 'porn', 'xxx', 'adult'];
-        return !skipKeywords.some(keyword => titleLower.includes(keyword));
-      });
-
-      const validImageUrls = [];
-      for (const item of filteredItems) {
-        // Check if it's an album and has images
-        if (item.is_album && (!item.images || item.images.length === 0)) {
-          continue;
-        }
-        
-        const imageToCheck = item.is_album ? item.images[0] : item;
-        
-        if (imageToCheck && 
-            imageToCheck.width >= 400 && 
-            imageToCheck.height >= 400 &&
-            !imageToCheck.nsfw) {
-          validImageUrls.push(item.is_album ? item.images[0].link : item.link);
-        }
-      }
-
-      console.log(`Found ${validImageUrls.length} valid images for "${tokenName}"`);
-
-      const topUrls = validImageUrls.slice(0, 10);
-      if (topUrls.length > 0) {
-        const randomUrl = topUrls[Math.floor(Math.random() * topUrls.length)];
-        return { success: true, url: randomUrl };
-      }
-    }
-
-    try {
-      const giphyResponse = await axios.get(
-        'https://api.giphy.com/v1/gifs/search',
-        {
-          params: {
-            api_key: process.env.GIPHY_API_KEY,
-            q: tokenName,
-            limit: 10,
-            rating: 'g'
-          }
-        }
+    if (imgurResponse.data.data.length > 0) {
+      // Filter for appropriate images
+      const imgurResults = imgurResponse.data.data.filter(item => 
+        !item.is_album && 
+        item.width >= 200 && 
+        item.height >= 200 &&
+        !item.nsfw &&
+        item.link
       );
+      
+      if (imgurResults.length > 0) {
+        const randomIndex = Math.floor(Math.random() * imgurResults.length);
+        return {
+          success: true,
+          url: imgurResults[randomIndex].link
+        };
+      }
+    }
+  } catch (imgurError) {
+    console.error('Imgur API error:', imgurError);
+  }
 
-      if (giphyResponse.data.data.length > 0) {
-        const giphyResults = giphyResponse.data.data.filter(gif => 
-          gif.images.original.width >= 200 && 
-          gif.images.original.height >= 200
-        );
-        
-        if (giphyResults.length > 0) {
-          const randomIndex = Math.floor(Math.random() * giphyResults.length);
-          return { 
-            success: true, 
-            url: giphyResults[randomIndex].images.original.url 
-          };
+  // Fall back to Giphy
+  try {
+    const giphyResponse = await axios.get(
+      'https://api.giphy.com/v1/gifs/search',
+      {
+        params: {
+          api_key: process.env.GIPHY_API_KEY,
+          q: tokenName,
+          limit: 10,
+          rating: 'g'
         }
       }
-    } catch (giphyError) {
-      console.error('Giphy API error:', giphyError);
-    }
-    
-    return { 
-      success: true, 
-      url: fallbackImages[Math.floor(Math.random() * fallbackImages.length)]
-    };
+    );
 
-  } catch (error) {
-    console.error('Imgur API error:', error);
-    
-    if (error.response?.status === 429) {
-      return { success: false, error: 'RATE_LIMIT' };
+    if (giphyResponse.data.data.length > 0) {
+      const giphyResults = giphyResponse.data.data.filter(gif => 
+        gif.images.original.width >= 200 && 
+        gif.images.original.height >= 200
+      );
+      
+      if (giphyResults.length > 0) {
+        const randomIndex = Math.floor(Math.random() * giphyResults.length);
+        return { 
+          success: true, 
+          url: giphyResults[randomIndex].images.original.url 
+        };
+      }
     }
-    
-    return { 
-      success: true, 
-      url: fallbackImages[Math.floor(Math.random() * fallbackImages.length)]
-    };
+  } catch (giphyError) {
+    console.error('Giphy API error:', giphyError);
   }
+  
+  // Fall back to default images if both APIs fail
+  return { 
+    success: true, 
+    url: fallbackImages[Math.floor(Math.random() * fallbackImages.length)]
+  };
 }
 
 async function findRelevantImage(tokenName) {
