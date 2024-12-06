@@ -248,6 +248,7 @@ const message = parentHash
   ? `${userResponse}Here's a token based on @${analysis[0].username}'s cast:\n\nName: ${tokenDetails.name}\nTicker: ${tokenDetails.ticker}`
   : `${userResponse}I checked out your casts... they're pretty glonky... here's a token based on your vibe:\n\nName: ${tokenDetails.name}\nTicker: ${tokenDetails.ticker}`;
 
+// Add null check for imageResult
 await createCastWithReply(replyToHash, message, imageResult?.url || fallbackImages[Math.floor(Math.random() * fallbackImages.length)]);
 }
 
@@ -309,7 +310,7 @@ async function generateTokenDetails(posts) {
         - Use only the english alphabet
         - Do not use the letters 'Q', 'X', and 'Z' too much
         - Do not use any existing popular memecoin names in the output
-        - The name should be a real word, but it can be made up when needed.
+        - The name should be a real word
         - The name can be 1 or 2 words`
       }]
     });
