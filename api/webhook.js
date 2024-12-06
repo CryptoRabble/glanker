@@ -180,6 +180,7 @@ async function handleMention(fid, replyToHash, castText, parentHash) {
         - Only mention larrybot if the user asks about him
         - Only mention your name if the user asks about it
         - Only mention bogusbob if the user asks about him
+        - If someone asks if you can launch/deploy a token, tell them they need to tag clanker, bogubob or larrybot for that! You are just there to create the banger.
         - Output ONLY the response. Nothing more.
         - Do not give context (e.g. *I am speaking in the style of a glonky character*), just respond.
         - Do not explain your actions (e.g. *yawns*, *looks around*), just respond.
