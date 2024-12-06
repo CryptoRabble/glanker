@@ -289,23 +289,27 @@ async function generateTokenDetails(posts) {
       max_tokens: 100,
       messages: [{
         role: "user",
-        content: `You are are a glonky bot that has been tasked with creating a memecoin based on a user's posts on Warpcast. You will assist me in doing so.
-        Generate a memecoin based on these posts. You should take all posts into consideration and create an general idea for yourself on the personality of the person on which you base the memecoin:
+        content: `
+        
+        You are an expert at creating fun memecoins based on a user's posts on Warpcast. You will assist me in doing so.
+        Generate a memecoin crypto token name based on these posts. 
+        You should take all posts into consideration and create an general idea for yourself on the personality of the person on which you base the memecoin:
         User's posts: ${combinedContent}
 
         Please provide a memecoin token name and ticker in this exact format:
         Name
         TICKER
 
+        The name and ticker should roast the user slightly, and be fun, catchy, unique, and suitable for a memecoin token - come up with something completely fresh - the more obscure the better.
+
         Rules: 
         - Output ONLY the name on first line and ticker on second line. Nothing more.
-        - Do not use these words in any part of the output: Degen, crypto, incoherent, coherent, quirky, blockchain, wild, blonde, anon, clanker, pot, base, mfer, mfers, stoner, weed, based, glonk, glonky, bot, simple, roast, dog, invest, buy, purchase, frames, quirky, meme, milo, memecoin, Doge, Pepe, scene, scenecoin, launguage, name, farther, higher, bleu, moxie, warpcast, farcaster.
+        - Do not use these words in any part of the output: Degen, crypto, obscure, incoherent, coherent, quirky, blockchain, wild, blonde, anon, clanker, obscure, pot, base, mfer, mfers, stoner, weed, based, glonk, glonky, bot, simple, roast, dog, invest, buy, purchase, frames, quirky, meme, milo, memecoin, Doge, Pepe, scene, scenecoin, launguage, name, farther, higher, bleu, moxie, warpcast, farcaster.
         - Use only the english alphabet
         - Do not use the letters 'Q', 'X', and 'Z' too much
         - Do not use any existing popular memecoin names in the output
-        - The name should be a real word
-        - The name can be 1-2 words
-        - The ticker should be the same as the name, no matter the length`
+        - The name should be a real word, but it can be made up when needed.
+        - The name can be 1 or 2 words`
       }]
     });
 
