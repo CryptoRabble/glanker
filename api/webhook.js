@@ -4,7 +4,6 @@ import { Anthropic } from '@anthropic-ai/sdk';
 import axios from 'axios';
 import crypto from 'crypto';
 import { createClient } from 'redis';
-import natural from 'natural';
 
 // Initialize clients
 init(process.env.AIRSTACK_API_KEY);
@@ -137,7 +136,7 @@ async function checkUserScore(fid) {
     const userScore = response.users?.[0]?.experimental?.neynar_user_score || 0;
     
     console.log('User score for FID:', fid, 'Score:', userScore);
-    return userScore >= 0.20;
+    return userScore >= 0.60;
   } catch (error) {
     console.error('Error checking user score:', error);
     return false;
@@ -246,10 +245,9 @@ async function handleMention(fid, replyToHash, castText, parentHash) {
 //${taggedPerson} create this token:
 
 const message = parentHash 
-  ? `${userResponse}Here's a token based on @${analysis[0].username}'s cast:\n\nName: ${tokenDetails.name}\nTicker: ${tokenDetails.ticker}`
-  : `${userResponse}I checked out your casts... they're pretty glonky... here's a token based on your vibe:\n\nName: ${tokenDetails.name}\nTicker: ${tokenDetails.ticker}`;
-
-await createCastWithReply(replyToHash, message, imageResult?.url || fallbackImages[Math.floor(Math.random() * fallbackImages.length)]);
+? `${userResponse}Here's a token based on @${analysis[0].username}'s cast:\n\nName: ${tokenDetails.name}\nTicker: ${tokenDetails.ticker}`
+: `${userResponse}I checked out your casts... they're pretty glonky... here's a token based on your vibe:\n\nName: ${tokenDetails.name}\nTicker: ${tokenDetails.ticker}`;
+await createCastWithReply(replyToHash, message, imageResult.url);
 }
 
 async function analyzeCasts(fid) {
@@ -333,42 +331,6 @@ async function generateTokenDetails(posts) {
 }
 
 async function searchImage(tokenName) {
-  const wordnet = natural.WordNet();
-  const metaphone = natural.Metaphone;
-  const tokenPhonetic = metaphone.process(tokenName);
-  
-  // Find a real word based on phonetic similarity
-  const searchTerm = await new Promise((resolve) => {
-    wordnet.lookup(tokenName, (results) => {
-      if (results && results.length > 0) {
-        // If the exact word exists, use it
-        resolve(tokenName);
-      } else {
-        // Get a list of common words from WordNet
-        wordnet.lookupAllWords((words) => {
-          // Find the most phonetically similar word
-          let closestWord = tokenName;
-          let minDistance = Infinity;
-          
-          words.forEach(word => {
-            const wordPhonetic = metaphone.process(word);
-            const distance = natural.LevenshteinDistance(tokenPhonetic, wordPhonetic);
-            
-            if (distance < minDistance && word.length > 2) {
-              minDistance = distance;
-              closestWord = word;
-            }
-          });
-          
-          console.log(`Found phonetically similar word: "${closestWord}" for "${tokenName}"`);
-          resolve(closestWord);
-        });
-      }
-    });
-  });
-
-  console.log(`Searching for images using term: "${searchTerm}" (original: "${tokenName}")`);
-
   // Try Giphy first
   try {
     const giphyResponse = await axios.get(
@@ -376,9 +338,9 @@ async function searchImage(tokenName) {
       {
         params: {
           api_key: process.env.GIPHY_API_KEY,
-          q: searchTerm,
+          q: tokenName,
           limit: 10,
-          rating: 'pg-13'
+          rating: 'pg'
         }
       }
     );
@@ -410,7 +372,7 @@ async function searchImage(tokenName) {
           'Authorization': `Client-ID ${process.env.IMGUR_CLIENT_ID}`
         },
         params: {
-          q: searchTerm,
+          q: tokenName,
           sort: 'top'
         }
       }
