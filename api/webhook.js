@@ -136,7 +136,7 @@ async function checkUserScore(fid) {
     const userScore = response.users?.[0]?.experimental?.neynar_user_score || 0;
     
     console.log('User score for FID:', fid, 'Score:', userScore);
-    return userScore >= 0.60;
+    return userScore >= 0.20;
   } catch (error) {
     console.error('Error checking user score:', error);
     return false;
@@ -245,9 +245,10 @@ async function handleMention(fid, replyToHash, castText, parentHash) {
 //${taggedPerson} create this token:
 
 const message = parentHash 
-? `${userResponse}Here's a token based on @${analysis[0].username}'s cast:\n\nName: ${tokenDetails.name}\nTicker: ${tokenDetails.ticker}`
-: `${userResponse}I checked out your casts... they're pretty glonky... here's a token based on your vibe:\n\nName: ${tokenDetails.name}\nTicker: ${tokenDetails.ticker}`;
-await createCastWithReply(replyToHash, message, imageResult.url);
+  ? `${userResponse}Here's a token based on @${analysis[0].username}'s cast:\n\nName: ${tokenDetails.name}\nTicker: ${tokenDetails.ticker}`
+  : `${userResponse}I checked out your casts... they're pretty glonky... here's a token based on your vibe:\n\nName: ${tokenDetails.name}\nTicker: ${tokenDetails.ticker}`;
+
+await createCastWithReply(replyToHash, message, imageResult?.url || fallbackImages[Math.floor(Math.random() * fallbackImages.length)]);
 }
 
 async function analyzeCasts(fid) {
