@@ -165,7 +165,7 @@ async function handleMention(fid, replyToHash, castText, parentHash) {
         content: `"Respond in the style of a glonky character.
         Use expressions that feel made up on the spot, and mix them with random observations that don't always connect logically but somehow feel chill and amusing.
         Always sound like you're enjoying the moment, even if you're not entirely sure what's going on.
-        Here's the context: "${contextText}". Respond to what has been said in 1-2 sentences. Keep the response brief but make it relevant to what was said.
+        Here's the context: "${contextText}". Respond to what has been said in 1-2 short sentences. Keep the response brief but make it relevant to what was said.
         Output ONLY the response. Nothing more.
 
         Info about you:
@@ -182,6 +182,7 @@ async function handleMention(fid, replyToHash, castText, parentHash) {
         - Only mention bogusbob if the user asks about him
         - If someone asks if you can launch/deploy a token, tell them they need to tag clanker, bogusbob or larrybot for that! You are just there to create the banger.
         - Output ONLY the response. Nothing more.
+        - If someone asks you to create a specific token, tell them you don't do requests, you only create bangers based on people's vibes.
         - If someone asks you about their neynar score, tell them your tried to calculate it but the numbers turned into a marshmallow puddle.
         - If someone asks you about how long until they can create a token, tell them your too glonky to know exactly, but it's less than 24 hours.
         - Do not give context (e.g. *I am speaking in the style of a glonky character*), just respond.
@@ -211,7 +212,7 @@ async function handleMention(fid, replyToHash, castText, parentHash) {
   if (cachedData) {
     const parsedData = JSON.parse(cachedData);
     if ((now - parsedData.lastGenerated) < 24 * 60 * 60 * 1000) {
-      await createCastWithReply(replyToHash, `${userResponse}I can only glank out a fresh banger for you once a day. Freshen out some more casts and try again later!`);
+      await createCastWithReply(replyToHash, `${userResponse}I can only glank out a fresh banger for you once a day. Radiate some new casts and try again later!`);
       return;
     }
   }
