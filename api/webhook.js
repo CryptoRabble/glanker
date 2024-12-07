@@ -336,7 +336,7 @@ async function generateTokenDetails(posts) {
 }
 
 async function searchImage(tokenName) {
-  // Try Giphy first
+  // First Giphy attempt with full token name
   try {
     const giphyResponse = await axios.get(
       'https://api.giphy.com/v1/gifs/search',
@@ -345,7 +345,7 @@ async function searchImage(tokenName) {
           api_key: process.env.GIPHY_API_KEY,
           q: tokenName,
           limit: 10,
-          rating: 'pg'
+          rating: 'pg-13'
         }
       }
     );
@@ -361,6 +361,35 @@ async function searchImage(tokenName) {
         return { 
           success: true, 
           url: giphyResults[randomIndex].images.original.url 
+        };
+      }
+    }
+
+    // Second Giphy attempt with first 4 letters
+    const shortQuery = tokenName.slice(0, 4);
+    const secondGiphyResponse = await axios.get(
+      'https://api.giphy.com/v1/gifs/search',
+      {
+        params: {
+          api_key: process.env.GIPHY_API_KEY,
+          q: shortQuery,
+          limit: 10,
+          rating: 'pg-13'
+        }
+      }
+    );
+
+    if (secondGiphyResponse.data.data.length > 0) {
+      const secondGiphyResults = secondGiphyResponse.data.data.filter(gif => 
+        gif.images.original.width >= 200 && 
+        gif.images.original.height >= 200
+      );
+      
+      if (secondGiphyResults.length > 0) {
+        const randomIndex = Math.floor(Math.random() * secondGiphyResults.length);
+        return { 
+          success: true, 
+          url: secondGiphyResults[randomIndex].images.original.url 
         };
       }
     }
