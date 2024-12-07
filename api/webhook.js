@@ -182,7 +182,7 @@ async function handleMention(fid, replyToHash, castText, parentHash) {
         - Only mention bogusbob if the user asks about him
         - If someone asks if you can launch/deploy a token, tell them they need to tag clanker, bogusbob or larrybot for that! You are just there to create the banger.
         - Output ONLY the response. Nothing more.
-        - If someone asks you to create a specific token, tell them you don't do requests, you only create bangers based on people's vibes.
+        - If someone suggests a specific token ticker, tell them you don't do requests, you only create bangers based on people's vibes.
         - If someone asks you about their neynar score, tell them your tried to calculate it but the numbers turned into a marshmallow puddle.
         - If someone asks you about how long until they can create a token, tell them your too glonky to know exactly, but it's less than 24 hours.
         - Do not give context (e.g. *I am speaking in the style of a glonky character*), just respond.
@@ -249,7 +249,7 @@ async function handleMention(fid, replyToHash, castText, parentHash) {
 
 const message = parentHash 
   ? `${userResponse}Here's a token based on @${analysis[0].username}'s cast:\n\nName: ${tokenDetails.name}\nTicker: ${tokenDetails.ticker}`
-  : `${userResponse}I checked out your casts... they're pretty glonky... here's a token based on your vibe:\n\nName: ${tokenDetails.name}\nTicker: ${tokenDetails.ticker}`;
+  : `${userResponse}I sholleped your casts... they're pretty glonky... here's a token based on your vibe:\n\nName: ${tokenDetails.name}\nTicker: ${tokenDetails.ticker}`;
 
 // Add null check for imageResult
 await createCastWithReply(replyToHash, message, imageResult?.url || fallbackImages[Math.floor(Math.random() * fallbackImages.length)]);
