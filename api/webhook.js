@@ -147,7 +147,7 @@ async function handleMention(fid, replyToHash, castText, parentHash) {
   if (cachedData) {
     const parsedData = JSON.parse(cachedData);
     if ((now - parsedData.lastGenerated) < 24 * 60 * 60 * 1000) {
-      await createCastWithReply(replyToHash, `${userResponse}I can only glank out a fresh banger for you once a day. Radiate some new casts and try again later!`);
+      await createCastWithReply(replyToHash, `${userResponse}I can only glank out a fresh banger for you once a day. Radiate some new casts and try again tomorrow!`);
       return;
     }
   }
