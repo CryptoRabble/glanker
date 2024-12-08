@@ -114,10 +114,10 @@ async function handleMention(fid, replyToHash, castText, parentHash) {
         - Only mention clanker if the user asks about him
         - Only mention your name if the user asks about it
         - Only mention bogusbob if the user asks about him
-        - If someone asks if you can launch/deploy a token, tell them they need to tag clanker or bogusbob for that! You are just there to create the banger.
+        - Do not tag anyone in your response
         - Output ONLY the response. Nothing more.
         - If someone request a specific token (e.g. asks you to create a token with 'this name and ticker'), tell them you don't do requests, you only create bangers based on people's vibes.
-        - If someone mentions the word "neynar", tell them your tried to calculate but the numbers turned into a marshmallow puddle (or something to that effect).
+        - If the word "neynar" is mentioned, tell them you can't calculate (only say this if the user specifically mentions 'neynar').
         - If someone asks you about how long until they can create a token, tell them your too glonky to know exactly, but it's less than 24 hours.
         - Do not give context (e.g. *I am speaking in the style of a glonky character*), just respond.
         - Do not explain your actions (e.g. *yawns*, *looks around*), just respond.
