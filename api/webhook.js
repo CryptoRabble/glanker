@@ -193,7 +193,8 @@ async function handleMention(fid, replyToHash, castText, parentHash) {
         - Do not use words like ya dig, ya know, ya feel, etc.
         - Do not use the word 'like' too much
         - Do not use the word 'vibes' too much
-        - Do not use the word 'yo' too much`
+        - Do not use the word 'yo' too much
+        - Only respond in English.`
       }]
     });
     userResponse = `${anthropicResponse.content[0].text}\n\n`;
@@ -247,10 +248,17 @@ async function handleMention(fid, replyToHash, castText, parentHash) {
 
 //${taggedPerson} create this token:
 
-const message = parentHash 
-  ? `${userResponse}Here's a token based on @${analysis[0].username}'s cast:\n\nName: ${tokenDetails.name}\nTicker: ${tokenDetails.ticker}`
-  : `${userResponse}I sholleped your casts... they're pretty glonky.\nHere's a token based on your vibe:\n\nName: ${tokenDetails.name}\nTicker: ${tokenDetails.ticker}`;
-
+const message = (() => {
+  // Check for "spirit token" in the cast text
+  if (castText.toLowerCase().includes('spirit token')) {
+    return `I just gazed into my crystal glinker and your spirit token revealed itself:\n\nName: ${tokenDetails.name}\nTicker: ${tokenDetails.ticker}`;
+  }
+  
+  // Original logic
+  return parentHash 
+    ? `${userResponse}Here's a token based on @${analysis[0].username}'s cast:\n\nName: ${tokenDetails.name}\nTicker: ${tokenDetails.ticker}`
+    : `${userResponse}I sholleped your casts... they're pretty glonky.\nHere's a token based on your vibe:\n\nName: ${tokenDetails.name}\nTicker: ${tokenDetails.ticker}`;
+})();
 // Add null check for imageResult
 await createCastWithReply(replyToHash, message, imageResult?.url || fallbackImages[Math.floor(Math.random() * fallbackImages.length)]);
 }
