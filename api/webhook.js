@@ -339,7 +339,7 @@ async function searchImage(tokenName) {
         params: {
           api_key: process.env.GIPHY_API_KEY,
           q: tokenName,
-          limit: 10,
+          limit: 2,
           rating: 'pg-13'
         }
       }
