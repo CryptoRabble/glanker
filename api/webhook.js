@@ -72,7 +72,7 @@ async function checkUserScore(fid) {
     const userScore = response.users?.[0]?.experimental?.neynar_user_score || 0;
     
     console.log('User score for FID:', fid, 'Score:', userScore);
-    return userScore >= 0.40;
+    return userScore >= 0.75;
   } catch (error) {
     console.error('Error checking user score:', error);
     return false;
