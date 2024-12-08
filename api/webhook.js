@@ -253,7 +253,7 @@ async function handleMention(fid, replyToHash, castText, parentHash) {
 const message = (() => {
   // Check for "spirit token" in the cast text
   if (castText.toLowerCase().includes('my spirit token')) {
-    return `I gazed into my crinkstal and your spirit token was beamed into my mindframe:\n\nName: ${tokenDetails.name}\nTicker: ${tokenDetails.ticker}`;
+    return `I gazed into my clankstal ball and your spirit token was beamed into my mindframe:\n\nName: ${tokenDetails.name}\nTicker: ${tokenDetails.ticker}`;
   }
   
   // Original logic
