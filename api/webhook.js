@@ -238,7 +238,7 @@ async function handleMention(fid, replyToHash, castText, parentHash) {
     analysis = await analyzeCasts(fid);
   }
 
-  const tokenDetails = castText.toLowerCase().includes('spirit token')
+  const tokenDetails = castText.toLowerCase().includes('my spirit token')
   ? await generateSpiritTokenDetails(analysis)
   : await generateTokenDetails(analysis);
   const imageResult = await findRelevantImage(tokenDetails.name);
@@ -252,7 +252,7 @@ async function handleMention(fid, replyToHash, castText, parentHash) {
 
 const message = (() => {
   // Check for "spirit token" in the cast text
-  if (castText.toLowerCase().includes('spirit token')) {
+  if (castText.toLowerCase().includes('my spirit token')) {
     return `I gazed into my crinkstal and your spirit token was beamed into my mindframe:\n\nName: ${tokenDetails.name}\nTicker: ${tokenDetails.ticker}`;
   }
   
