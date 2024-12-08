@@ -3,7 +3,7 @@ import { NeynarAPIClient, Configuration } from "@neynar/nodejs-sdk";
 import { Anthropic } from '@anthropic-ai/sdk';
 import axios from 'axios';
 import crypto from 'crypto';
-import { createClient } from 'redis';
+import { safeRedisGet, safeRedisSet } from '../utils/redis';
 
 // Initialize clients
 init(process.env.AIRSTACK_API_KEY);
@@ -21,8 +21,6 @@ const neynar = new NeynarAPIClient(neynarConfig);
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY
 });
-
-let redisClient = null;
 
 const fallbackImages = [
   'https://i.imgur.com/dXCgbhf.jpeg',
@@ -47,68 +45,6 @@ const fallbackImages = [
   'https://i.imgur.com/MkpU3JJ.jpeg',
   'https://i.imgur.com/QdJTA68.jpeg'
 ];
-
-async function getRedisClient() {
-  if (!redisClient) {
-    console.log('Creating new Redis client');
-    const redisUrl = process.env.REDIS_URL?.replace(/['"]/g, '');
-    
-    if (!redisUrl) {
-      throw new Error('Redis URL not configured');
-    }
-
-    redisClient = createClient({
-      url: redisUrl,
-      socket: {
-        tls: true,
-        rejectUnauthorized: false
-      }
-    });
-
-    redisClient.on('error', (err) => {
-      console.error('Redis Client Error:', err);
-      redisClient = null;
-    });
-
-    redisClient.on('connect', () => {
-      console.log('Redis client connected');
-    });
-
-    try {
-      await redisClient.connect();
-    } catch (error) {
-      console.error('Failed to connect to Redis:', error);
-      redisClient = null;
-      throw error;
-    }
-  }
-
-  return redisClient;
-}
-
-async function safeRedisGet(key) {
-  try {
-    console.log(`Attempting to get Redis key: ${key}`);
-    const client = await getRedisClient();
-    const value = await client.get(key);
-    console.log(`Redis GET - Key: ${key}, Value:`, value);
-    return value;
-  } catch (error) {
-    console.error(`Error getting Redis key ${key}:`, error);
-    return null;
-  }
-}
-
-async function safeRedisSet(key, value) {
-  try {
-    console.log(`Attempting to set Redis key: ${key}`);
-    const client = await getRedisClient();
-    await client.set(key, value);
-    console.log(`Redis SET - Key: ${key}, Value set successfully`);
-  } catch (error) {
-    console.error(`Error setting Redis key ${key}:`, error);
-  }
-}
 
 async function getRootCast(hash) {
   try {
@@ -136,7 +72,7 @@ async function checkUserScore(fid) {
     const userScore = response.users?.[0]?.experimental?.neynar_user_score || 0;
     
     console.log('User score for FID:', fid, 'Score:', userScore);
-    return userScore >= 0.50;
+    return userScore >= 0.40;
   } catch (error) {
     console.error('Error checking user score:', error);
     return false;
