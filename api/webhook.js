@@ -3,7 +3,7 @@ import { NeynarAPIClient, Configuration } from "@neynar/nodejs-sdk";
 import { Anthropic } from '@anthropic-ai/sdk';
 import axios from 'axios';
 import crypto from 'crypto';
-import { safeRedisGet, safeRedisSet } from '../utils/redis';
+import { safeRedisGet, safeRedisSet } from './utils/redis.js';
 
 // Initialize clients
 init(process.env.AIRSTACK_API_KEY);
