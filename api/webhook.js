@@ -353,9 +353,12 @@ async function searchImage(tokenName) {
       
       if (giphyResults.length > 0) {
         const randomIndex = Math.floor(Math.random() * giphyResults.length);
+        const fullUrl = giphyResults[randomIndex].images.original.url;
+        // Clean up the URL to remove query parameters
+        const cleanUrl = fullUrl.split('?')[0];
         return { 
           success: true, 
-          url: giphyResults[randomIndex].images.original.url 
+          url: cleanUrl 
         };
       }
     }
@@ -382,9 +385,12 @@ async function searchImage(tokenName) {
       
       if (secondGiphyResults.length > 0) {
         const randomIndex = Math.floor(Math.random() * secondGiphyResults.length);
+        const fullUrl = secondGiphyResults[randomIndex].images.original.url;
+        // Clean up the URL to remove query parameters
+        const cleanUrl = fullUrl.split('?')[0];
         return { 
           success: true, 
-          url: secondGiphyResults[randomIndex].images.original.url 
+          url: cleanUrl 
         };
       }
     }
