@@ -187,13 +187,13 @@ async function handleMention(fid, replyToHash, castText, parentHash) {
 const message = (() => {
   // Check for "spirit token" in the cast text
   if (castText.toLowerCase().includes('my spirit token')) {
-    return `I gazed into my clankstal ball and your spirit token was beamed into my mindframe:\n\nName: ${tokenDetails.name}\nTicker: ${tokenDetails.ticker}`;
+    return `I gazed into my glankstal ball and your spirit token was beamed into my mindframe:\n\n@clanker create this token:\nName: ${tokenDetails.name}\nTicker: ${tokenDetails.ticker}`;
   }
   
   // Original logic
   return parentHash 
-    ? `${userResponse}Here's a token based on @${analysis[0].username}'s cast:\n\nName: ${tokenDetails.name}\nTicker: ${tokenDetails.ticker}`
-    : `${userResponse}I scrolled your casts... they're pretty glonky.\nHere's a token based on your vibe:\n\nName: ${tokenDetails.name}\nTicker: ${tokenDetails.ticker}`;
+    ? `${userResponse}Here's a token based on @${analysis[0].username}'s cast:\n\n@clanker create this token:\nName: ${tokenDetails.name}\nTicker: ${tokenDetails.ticker}`
+    : `${userResponse}I scrolled your casts... they're pretty glonky.\nHere's a token based on your vibe:\n\n@clanker create this token:\nName: ${tokenDetails.name}\nTicker: ${tokenDetails.ticker}`;
 })();
 // Add null check for imageResult
 await createCastWithReply(replyToHash, message, imageResult?.url || fallbackImages[Math.floor(Math.random() * fallbackImages.length)]);
