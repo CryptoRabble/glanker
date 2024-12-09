@@ -447,9 +447,11 @@ async function findRelevantImage(tokenName) {
 }
 
 async function createCastWithReply(replyToHash, message, imageUrl) {
+  const messageWithImage = imageUrl ? `${message}\n\n${imageUrl}` : message;
+  
   await neynar.publishCast({
     signer_uuid: process.env.SIGNER_UUID,
-    text: message,
+    text: messageWithImage,
     parent: replyToHash,
     ...(imageUrl && {
       embeds: [{
