@@ -331,7 +331,6 @@ async function generateSpiritTokenDetails(posts) {
 
 
 async function searchImage(tokenName) {
-  // First Giphy attempt with full token name
   try {
     const giphyResponse = await axios.get(
       'https://api.giphy.com/v1/gifs/search',
@@ -354,8 +353,8 @@ async function searchImage(tokenName) {
       if (giphyResults.length > 0) {
         const randomIndex = Math.floor(Math.random() * giphyResults.length);
         const fullUrl = giphyResults[randomIndex].images.original.url;
-        // Clean up the URL to remove query parameters
-        const cleanUrl = fullUrl.split('?')[0];
+        const gifId = fullUrl.split('/').pop().split('?')[0];
+        const cleanUrl = `https://i.giphy.com/media/${gifId}/giphy.gif`;
         return { 
           success: true, 
           url: cleanUrl 
@@ -386,8 +385,8 @@ async function searchImage(tokenName) {
       if (secondGiphyResults.length > 0) {
         const randomIndex = Math.floor(Math.random() * secondGiphyResults.length);
         const fullUrl = secondGiphyResults[randomIndex].images.original.url;
-        // Clean up the URL to remove query parameters
-        const cleanUrl = fullUrl.split('?')[0];
+        const gifId = fullUrl.split('/').pop().split('?')[0];
+        const cleanUrl = `https://i.giphy.com/media/${gifId}/giphy.gif`;
         return { 
           success: true, 
           url: cleanUrl 
@@ -447,15 +446,22 @@ async function findRelevantImage(tokenName) {
 }
 
 async function createCastWithReply(replyToHash, message, imageUrl) {
-  const messageWithImage = imageUrl ? `${message}\n\n${imageUrl}` : message;
+  // Convert media.giphy.com URLs to i.giphy.com format
+  let formattedImageUrl = imageUrl;
+  if (imageUrl && imageUrl.includes('giphy.com')) {
+    const gifId = imageUrl.split('/').pop().split('?')[0];
+    formattedImageUrl = `https://i.giphy.com/media/${gifId}/giphy.gif`;
+  }
+  
+  const messageWithImage = formattedImageUrl ? `${message}\n\n${formattedImageUrl}` : message;
   
   await neynar.publishCast({
     signer_uuid: process.env.SIGNER_UUID,
     text: messageWithImage,
     parent: replyToHash,
-    ...(imageUrl && {
+    ...(formattedImageUrl && {
       embeds: [{
-        url: imageUrl
+        url: formattedImageUrl
       }]
     })
   });
