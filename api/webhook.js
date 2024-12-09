@@ -353,7 +353,8 @@ async function searchImage(tokenName) {
       if (giphyResults.length > 0) {
         const randomIndex = Math.floor(Math.random() * giphyResults.length);
         const fullUrl = giphyResults[randomIndex].images.original.url;
-        const gifId = fullUrl.split('/').pop().split('?')[0];
+        const pathSegments = fullUrl.split('/');
+        const gifId = pathSegments[pathSegments.length - 2]; // Get the ID segment before 'giphy.gif'
         const cleanUrl = `https://i.giphy.com/media/${gifId}/giphy.gif`;
         return { 
           success: true, 
@@ -385,7 +386,8 @@ async function searchImage(tokenName) {
       if (secondGiphyResults.length > 0) {
         const randomIndex = Math.floor(Math.random() * secondGiphyResults.length);
         const fullUrl = secondGiphyResults[randomIndex].images.original.url;
-        const gifId = fullUrl.split('/').pop().split('?')[0];
+        const pathSegments = fullUrl.split('/');
+        const gifId = pathSegments[pathSegments.length - 2]; // Get the ID segment before 'giphy.gif'
         const cleanUrl = `https://i.giphy.com/media/${gifId}/giphy.gif`;
         return { 
           success: true, 
@@ -449,7 +451,9 @@ async function createCastWithReply(replyToHash, message, imageUrl) {
   // Convert media.giphy.com URLs to i.giphy.com format
   let formattedImageUrl = imageUrl;
   if (imageUrl && imageUrl.includes('giphy.com')) {
-    const gifId = imageUrl.split('/').pop().split('?')[0];
+    // Extract the actual ID from the path segments
+    const pathSegments = imageUrl.split('/');
+    const gifId = pathSegments[pathSegments.length - 2]; // Get the ID segment before 'giphy.gif'
     formattedImageUrl = `https://i.giphy.com/media/${gifId}/giphy.gif`;
   }
   
