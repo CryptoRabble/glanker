@@ -331,44 +331,31 @@ async function generateSpiritTokenDetails(posts) {
 
 
 async function searchImage(tokenName) {
-  // First try Tenor
+  // First Giphy attempt with full token name
   try {
-    const tenorResponse = await axios.get(
-      'https://tenor.googleapis.com/v2/search',
+    const giphyResponse = await axios.get(
+      'https://api.giphy.com/v1/gifs/search',
       {
         params: {
-          key: process.env.TENOR_API_KEY,
+          api_key: process.env.GIPHY_API_KEY,
           q: tokenName,
           limit: 10,
-          contentfilter: 'medium'
+          rating: 'pg-13'
         }
       }
     );
 
-    if (tenorResponse.data.results?.length > 0) {
-      // Create array of all valid gif, mediumgif, and tinygif URLs
-      const validGifs = tenorResponse.data.results.flatMap(result => {
-        const formats = result.media_formats;
-        const urls = [];
-        
-        if (formats.gif?.width >= 200 && formats.gif?.height >= 200) {
-          urls.push(formats.gif.url);
-        }
-        if (formats.mediumgif?.width >= 200 && formats.mediumgif?.height >= 200) {
-          urls.push(formats.mediumgif.url);
-        }
-        if (formats.tinygif?.width >= 200 && formats.tinygif?.height >= 200) {
-          urls.push(formats.tinygif.url);
-        }
-        
-        return urls;
-      });
+    if (giphyResponse.data.data.length > 0) {
+      const giphyResults = giphyResponse.data.data.filter(gif => 
+        gif.images.original.width >= 200 && 
+        gif.images.original.height >= 200
+      );
       
-      if (validGifs.length > 0) {
-        const randomIndex = Math.floor(Math.random() * validGifs.length);
+      if (giphyResults.length > 0) {
+        const randomIndex = Math.floor(Math.random() * giphyResults.length);
         return { 
           success: true, 
-          url: validGifs[randomIndex]
+          url: giphyResults[randomIndex].images.original.url 
         };
       }
     }
