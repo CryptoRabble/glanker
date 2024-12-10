@@ -250,7 +250,7 @@ async function generateTokenDetails(posts) {
         The name and ticker should roast the user slightly, and be fun, catchy, unique, and suitable for a memecoin token - come up with something completely fresh - the more obscure the better.
 
         Rules: 
-        - Output ONLY the name on first line and ticker on second line. Nothing more.
+        - Output only the name and ticker, each on a separate line. Nothing more.
         - Do not use these words in any part of the output: Degen, crypto, obscure, incoherent, coherent, quirky, blockchain, wild, blonde, anon, clanker, obscure, pot, base, mfer, mfers, stoner, weed, based, glonk, glonky, bot, simple, roast, dog, invest, buy, purchase, frames, quirky, meme, milo, memecoin, Doge, Pepe, scene, scenecoin, launguage, name, farther, higher, bleu, moxie, warpcast, farcaster.
         - Use only the english alphabet
         - Do not use the letters 'Q', 'X', and 'Z' too much
