@@ -82,6 +82,21 @@ async function checkUserScore(fid) {
 async function handleMention(fid, replyToHash, castText, parentHash) {
   console.log('Handling mention from FID:', fid);
 
+  // Get tagged users from mentioned_profiles (excluding glanker)
+  const taggedUsers = req.body.data.mentioned_profiles.filter(profile => 
+    profile.fid.toString() !== '885622' // Exclude glanker's FID
+  );
+
+  let targetFid = fid;
+  let targetUsername = null;
+
+  if (taggedUsers.length > 0) {
+    // Use the first tagged user that isn't glanker
+    const taggedUser = taggedUsers[0];
+    targetFid = taggedUser.fid;
+    targetUsername = taggedUser.username;
+  }
+
   let userResponse = '';
   const mentionText = castText.replace('@glanker', '').trim();
   if (mentionText) {
@@ -134,67 +149,24 @@ async function handleMention(fid, replyToHash, castText, parentHash) {
     userResponse = `${anthropicResponse.content[0].text}\n\n`;
   }
 
-  const hasValidScore = await checkUserScore(fid);
-  if (!hasValidScore) {
-    await createCastWithReply(replyToHash, `${userResponse}Sorry fren, you need a higher Neynar score`);
-    return;
-  }
-
-  const redisKey = `token:${fid}`;
-  const cachedData = await safeRedisGet(redisKey);
-  const now = Date.now();
-
-  if (cachedData) {
-    const parsedData = JSON.parse(cachedData);
-    if ((now - parsedData.lastGenerated) < 24 * 60 * 60 * 1000) {
-      await createCastWithReply(replyToHash, `${userResponse}I can only glank out a fresh banger for you once a day. Radiate some new casts and try again tomorrow!`);
-      return;
-    }
-  }
-
-  await safeRedisSet(redisKey, JSON.stringify({ lastGenerated: now }));
-
-  let parentCastText = '';
-  if (parentHash) {
-    const parentCast = await getRootCast(parentHash);
-    if (parentCast) {
-      parentCastText = parentCast[0].text;
-    }
-  }
-
   let analysis;
   if (parentHash) {
     analysis = await getRootCast(parentHash);
     if (!analysis) {
-      analysis = await analyzeCasts(fid);
+      analysis = await analyzeCasts(targetFid);
     }
   } else {
-    analysis = await analyzeCasts(fid);
+    analysis = await analyzeCasts(targetFid);
   }
 
-  const tokenDetails = castText.toLowerCase().includes('my spirit token')
-  ? await generateSpiritTokenDetails(analysis)
-  : await generateTokenDetails(analysis);
+  const tokenDetails = await generateTokenDetails(analysis);
   const imageResult = await findRelevantImage(tokenDetails.name);
 
-   // Check if the cast contains bogus-related keywords
- //const shouldTagBogusbob = castText.toLowerCase().includes('bogus') || 
- //castText.toLowerCase().includes('bogusbob');
-//const taggedPerson = shouldTagBogusbob ? '@bogusbob';
+  const message = targetUsername
+    ? `${userResponse}I scrolled through @${targetUsername}'s casts... they're pretty glonky.\nHere's a token based on their vibe:\n\n@clanker create this token:\nName: ${tokenDetails.name}\nTicker: ${tokenDetails.ticker.toUpperCase()}`
+    : `${userResponse}I scrolled through your casts... they're pretty glonky.\nHere's a token based on your vibe:\n\n@clanker create this token:\nName: ${tokenDetails.name}\nTicker: ${tokenDetails.ticker.toUpperCase()}`;
 
-//${taggedPerson} create this token:
-
-const message = (() => {
-  // Check for "spirit token" in the cast text
-  if (castText.toLowerCase().includes('my spirit token')) {
-    return `I gazed into my glankstal ball and your spirit token was beamed into my mindframe:\n\n@clanker create this token:\nName: ${tokenDetails.name}\nTicker: ${tokenDetails.ticker}`;
-  }
-  
-  // Original logic
-  return `${userResponse}I scrolled through your casts... they're pretty glonky.\nHere's a token based on your vibe:\n\n@clanker create this token:\nName: ${tokenDetails.name}\nTicker: ${tokenDetails.ticker}`;
-})();
-// Add null check for imageResult
-await createCastWithReply(replyToHash, message, imageResult?.url || fallbackImages[Math.floor(Math.random() * fallbackImages.length)]);
+  await createCastWithReply(replyToHash, message, imageResult?.url || fallbackImages[Math.floor(Math.random() * fallbackImages.length)]);
 }
 
 async function analyzeCasts(fid) {
@@ -274,6 +246,8 @@ async function generateTokenDetails(posts) {
   }
 }
 
+// Keep the generateSpiritTokenDetails function but comment it out
+/*
 async function generateSpiritTokenDetails(posts) {
   const combinedContent = posts.map(p => p.text).join(' ');
 
@@ -320,7 +294,7 @@ async function generateSpiritTokenDetails(posts) {
     throw error;
   }
 }
-
+*/
 
 async function searchImage(tokenName) {
   try {
