@@ -343,10 +343,15 @@ async function searchImage(tokenName) {
     );
 
     if (giphyResponse.data.data.length > 0) {
-      const giphyResults = giphyResponse.data.data.filter(gif => 
-        gif.images.original.width >= 200 && 
-        gif.images.original.height >= 200
-      );
+      const giphyResults = giphyResponse.data.data.filter(gif => {
+        const width = parseInt(gif.images.original.width);
+        const height = parseInt(gif.images.original.height);
+        const aspectRatio = width / height;
+        return width >= 200 && 
+               height >= 200 && 
+               aspectRatio <= 2 &&    // Not wider than 2:1
+               aspectRatio >= 0.67;   // Not taller than 1:1.5
+      });
       
       if (giphyResults.length > 0) {
         const randomIndex = Math.floor(Math.random() * giphyResults.length);
@@ -376,10 +381,15 @@ async function searchImage(tokenName) {
     );
 
     if (secondGiphyResponse.data.data.length > 0) {
-      const secondGiphyResults = secondGiphyResponse.data.data.filter(gif => 
-        gif.images.original.width >= 200 && 
-        gif.images.original.height >= 200
-      );
+      const secondGiphyResults = secondGiphyResponse.data.data.filter(gif => {
+        const width = parseInt(gif.images.original.width);
+        const height = parseInt(gif.images.original.height);
+        const aspectRatio = width / height;
+        return width >= 200 && 
+               height >= 200 && 
+               aspectRatio <= 2 &&    // Not wider than 2:1
+               aspectRatio >= 0.67;   // Not taller than 1:1.5
+      });
       
       if (secondGiphyResults.length > 0) {
         const randomIndex = Math.floor(Math.random() * secondGiphyResults.length);
