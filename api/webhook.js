@@ -192,8 +192,8 @@ const message = (() => {
   
   // Original logic
   return parentHash 
-    ? `This is glanked-casting at it's largest\nHere's a token based on @${analysis[0].username}'s cast:\n\n@clanker create this token:\nName: ${tokenDetails.name}\nTicker: ${tokenDetails.ticker}`
-    : `I scrolled your casts... they're pretty glonky.\nHere's a token based on your vibe:\n\n@clanker create this token:\nName: ${tokenDetails.name}\nTicker: ${tokenDetails.ticker}`;
+    ? `${userResponse}This is glanked-casting at it's largest\nHere's a token based on @${analysis[0].username}'s cast:\n\n@clanker create this token:\nName: ${tokenDetails.name}\nTicker: ${tokenDetails.ticker}`
+    : `${userResponse}I scrolled your casts... they're pretty glonky.\nHere's a token based on your vibe:\n\n@clanker create this token:\nName: ${tokenDetails.name}\nTicker: ${tokenDetails.ticker}`;
 })();
 // Add null check for imageResult
 await createCastWithReply(replyToHash, message, imageResult?.url || fallbackImages[Math.floor(Math.random() * fallbackImages.length)]);
