@@ -82,36 +82,6 @@ async function checkUserScore(fid) {
 async function handleMention(fid, replyToHash, castText, parentHash) {
   console.log('Handling mention from FID:', fid);
 
-  // Extract tagged FIDs (excluding glanker)
-  const taggedUsers = castText.match(/@(\w+)/g)?.filter(tag => 
-    tag !== '@glanker' && 
-    // Ensure the username exists and isn't empty
-    tag.length > 1
-  ) || [];
-
-  let targetFid = fid;
-  let targetUsername = null;
-
-  if (taggedUsers.length > 0) {
-    try {
-      // Remove @ and any potential whitespace
-      const username = taggedUsers[0].replace('@', '').trim();
-      
-      // Only proceed if we have a valid username
-      if (username) {
-        const response = await neynar.lookupUserByUsername(username);
-        if (response?.user?.fid) {
-          targetFid = response.user.fid;
-          targetUsername = username;
-        }
-      }
-    } catch (error) {
-      console.error('Error looking up tagged user:', error);
-      // Fall back to original user if lookup fails
-      targetFid = fid;
-    }
-  }
-
   let userResponse = '';
   const mentionText = castText.replace('@glanker', '').trim();
   if (mentionText) {
@@ -196,35 +166,35 @@ async function handleMention(fid, replyToHash, castText, parentHash) {
   if (parentHash) {
     analysis = await getRootCast(parentHash);
     if (!analysis) {
-      analysis = await analyzeCasts(targetFid);
+      analysis = await analyzeCasts(fid);
     }
   } else {
-    analysis = await analyzeCasts(targetFid);
+    analysis = await analyzeCasts(fid);
   }
 
-  // const tokenDetails = castText.toLowerCase().includes('my spirit token')
-  //   ? await generateSpiritTokenDetails(analysis)
-  //   : await generateTokenDetails(analysis);
-  const tokenDetails = await generateTokenDetails(analysis);
+  const tokenDetails = castText.toLowerCase().includes('my spirit token')
+  ? await generateSpiritTokenDetails(analysis)
+  : await generateTokenDetails(analysis);
   const imageResult = await findRelevantImage(tokenDetails.name);
 
-  const message = (() => {
-    if (targetUsername) {
-      // Tagged user case
-      // if (castText.toLowerCase().includes('my spirit token')) {
-      //   return `I gazed into my glankstal ball to see @${targetUsername}'s spirit token:\n\n@clanker create this token:\nName: ${tokenDetails.name}\nTicker: ${tokenDetails.ticker.toUpperCase()}`;
-      // }
-      return `${userResponse}I scrolled through @${targetUsername}'s casts... they're pretty glonky.\nHere's a token based on their vibe:\n\n@clanker create this token:\nName: ${tokenDetails.name}\nTicker: ${tokenDetails.ticker.toUpperCase()}`;
-    }
-    
-    // Original behavior for non-tagged cases
-    // if (castText.toLowerCase().includes('my spirit token')) {
-    //   return `I gazed into my glankstal ball and your spirit token was beamed into my mindframe:\n\n@clanker create this token:\nName: ${tokenDetails.name}\nTicker: ${tokenDetails.ticker.toUpperCase()}`;
-    // }
-    return `${userResponse}I scrolled through your casts... they're pretty glonky.\nHere's a token based on your vibe:\n\n@clanker create this token:\nName: ${tokenDetails.name}\nTicker: ${tokenDetails.ticker.toUpperCase()}`;
-  })();
+   // Check if the cast contains bogus-related keywords
+ //const shouldTagBogusbob = castText.toLowerCase().includes('bogus') || 
+ //castText.toLowerCase().includes('bogusbob');
+//const taggedPerson = shouldTagBogusbob ? '@bogusbob';
 
-  await createCastWithReply(replyToHash, message, imageResult?.url || fallbackImages[Math.floor(Math.random() * fallbackImages.length)]);
+//${taggedPerson} create this token:
+
+const message = (() => {
+  // Check for "spirit token" in the cast text
+  if (castText.toLowerCase().includes('my spirit token')) {
+    return `I gazed into my glankstal ball and your spirit token was beamed into my mindframe:\n\n@clanker create this token:\nName: ${tokenDetails.name}\nTicker: ${tokenDetails.ticker}`;
+  }
+  
+  // Original logic
+  return `${userResponse}I scrolled through your casts... they're pretty glonky.\nHere's a token based on your vibe:\n\n@clanker create this token:\nName: ${tokenDetails.name}\nTicker: ${tokenDetails.ticker}`;
+})();
+// Add null check for imageResult
+await createCastWithReply(replyToHash, message, imageResult?.url || fallbackImages[Math.floor(Math.random() * fallbackImages.length)]);
 }
 
 async function analyzeCasts(fid) {
@@ -304,8 +274,6 @@ async function generateTokenDetails(posts) {
   }
 }
 
-// Keep the generateSpiritTokenDetails function but comment it out
-/*
 async function generateSpiritTokenDetails(posts) {
   const combinedContent = posts.map(p => p.text).join(' ');
 
@@ -352,7 +320,7 @@ async function generateSpiritTokenDetails(posts) {
     throw error;
   }
 }
-*/
+
 
 async function searchImage(tokenName) {
   try {
