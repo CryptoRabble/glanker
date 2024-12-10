@@ -187,11 +187,11 @@ async function handleMention(fid, replyToHash, castText, parentHash) {
 const message = (() => {
   // Check for "spirit token" in the cast text
   if (castText.toLowerCase().includes('my spirit token')) {
-    return `I gazed into my glankstal ball and your spirit token was beamed into my mindframe:\n\n@clanker create this token:\nName: ${tokenDetails.name}\nTicker: ${tokenDetails.ticker}`;
+    return `I gazed into my glankstal ball and your spirit token was beamed into my mindframe:\n\n@clanker create this token:\nName: ${tokenDetails.name}\nTicker: ${tokenDetails.ticker.toUpperCase()}`;
   }
   
   // Original logic
-  return `${userResponse}I scrolled through your casts... they're pretty glonky.\nHere's a token based on your vibe:\n\n@clanker create this token:\nName: ${tokenDetails.name}\nTicker: ${tokenDetails.ticker}`;
+  return `${userResponse}I scrolled through your casts... they're pretty glonky.\nHere's a token based on your vibe:\n\n@clanker create this token:\nName: ${tokenDetails.name}\nTicker: ${tokenDetails.ticker.toUpperCase()}`;
 })();
 // Add null check for imageResult
 await createCastWithReply(replyToHash, message, imageResult?.url || fallbackImages[Math.floor(Math.random() * fallbackImages.length)]);
@@ -243,11 +243,7 @@ async function generateTokenDetails(posts) {
         You should take all posts into consideration and create an general idea for yourself on the personality of the person on which you base the memecoin:
         User's posts: ${combinedContent}
 
-        Please provide a memecoin token name and ticker in this exact format:
-        Name
-        TICKER
-
-        The name and ticker should roast the user slightly, and be fun, catchy, unique, and suitable for a memecoin token - come up with something completely fresh - the more obscure the better.
+        Please provide a memecoin token name and ticker. The name should roast the user slightly, and be fun, catchy, unique, and suitable for a memecoin token - come up with something completely fresh - the more obscure the better.
 
         Rules: 
         - Output only the name and ticker, each on a separate line. Nothing more.
@@ -256,7 +252,8 @@ async function generateTokenDetails(posts) {
         - Do not use the letters 'Q', 'X', and 'Z' too much
         - Do not use any existing popular memecoin names in the output
         - The name should be a real word
-        - The name can be 1 or 2 words`
+        - The name can be 1 or 2 words
+        - The ticker should be between 3-10 characters`
       }]
     });
 
@@ -292,11 +289,7 @@ async function generateSpiritTokenDetails(posts) {
         You should take all posts into consideration and create an general idea for yourself on the deepest desires or trait of the persons inner spirit on which you base the memecoin:
         User's posts: ${combinedContent}
 
-        Please provide a memecoin token name and ticker in this exact format:
-        Name
-        TICKER
-
-        The name and ticker should roast the user slightly, and be fun, catchy, unique, and suitable for a memecoin token - come up with something completely fresh - the more obscure the better.
+        lease provide a memecoin token name and ticker. The name should roast the user slightly, and be fun, catchy, unique, and suitable for a memecoin token - come up with something completely fresh - the more obscure the better.
 
         Rules: 
         - Output ONLY the name on first line and ticker on second line. Nothing more.
@@ -306,7 +299,8 @@ async function generateSpiritTokenDetails(posts) {
         - Do not use any existing popular memecoin names in the output
         - The name should be a real word
         - The name can be 1 or 2 words
-        - Don't make itobviously spiritual`
+        - The ticker should be between 3-10 characters
+        - Don't make it obviously spiritual`
       }]
     });
 
