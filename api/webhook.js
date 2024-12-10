@@ -191,7 +191,7 @@ async function handleMention(fid, replyToHash, castText, parentHash, mentionedPr
   const imageResult = await findRelevantImage(tokenDetails.name);
 
   const message = targetUsername
-    ? `Ah, you want me to peep on other people's profiles? Alright fren, here's a token based on @${targetUsername}'s vibe:\n\n@clanker create this token:\nName: ${tokenDetails.name}\nTicker: ${tokenDetails.ticker.toUpperCase()}`
+    ? `Ah, you want me to peep on other people's profiles?\nAlright fren, here's a token based on @${targetUsername}'s vibe:\n\n@clanker create this token:\nName: ${tokenDetails.name}\nTicker: ${tokenDetails.ticker.toUpperCase()}`
     : `${userResponse}I scrolled through your casts... they're pretty glonky.\nHere's a token based on your vibe:\n\n@clanker create this token:\nName: ${tokenDetails.name}\nTicker: ${tokenDetails.ticker.toUpperCase()}`;
 
   await createCastWithReply(replyToHash, message, imageResult?.url || fallbackImages[Math.floor(Math.random() * fallbackImages.length)]);
