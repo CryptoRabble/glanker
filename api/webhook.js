@@ -508,7 +508,7 @@ async function searchImage(tokenName) {
         params: {
           api_key: process.env.GIPHY_API_KEY,
           q: tokenName,
-          limit: 10,
+          limit: 5,
           rating: 'pg-13'
         }
       }
@@ -521,7 +521,7 @@ async function searchImage(tokenName) {
         const aspectRatio = width / height;
         return width >= 200 && 
                height >= 200 && 
-               aspectRatio <= 1.91 &&    // Not wider than 2:1
+               aspectRatio <= 2 &&    // Not wider than 2:1
                aspectRatio >= 0.67;   // Not taller than 1:1.5
       });
       
@@ -546,7 +546,7 @@ async function searchImage(tokenName) {
         params: {
           api_key: process.env.GIPHY_API_KEY,
           q: shortQuery,
-          limit: 10,
+          limit: 3,
           rating: 'pg-13'
         }
       }
@@ -559,7 +559,7 @@ async function searchImage(tokenName) {
         const aspectRatio = width / height;
         return width >= 200 && 
                height >= 200 && 
-               aspectRatio <= 1.91 &&    // Not wider than 2:1
+               aspectRatio <= 2 &&    // Not wider than 2:1
                aspectRatio >= 0.67;   // Not taller than 1:1.5
       });
       
