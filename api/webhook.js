@@ -417,7 +417,7 @@ async function generateTokenDetails(posts) {
         You should take all posts into consideration and create an general idea for yourself on the personality of the person on which you base the token:
         User's posts: ${combinedContent}
 
-        Please provide a token name and ticker. The name should roast the user, and be fun, catchy, unique, and suitable for a memecoin token - come up with something completely fresh - the more obscure the better.
+        Please provide a token name and ticker. The name should roast the user slightly, and be fun, catchy, unique, and suitable for a memecoin token - come up with something completely fresh - the more obscure the better.
 
         Rules: 
         - Output only the name and ticker, each on a separate line. Nothing more.
