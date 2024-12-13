@@ -521,7 +521,7 @@ async function searchImage(tokenName) {
         const aspectRatio = width / height;
         return width >= 200 && 
                height >= 200 && 
-               aspectRatio <= 2 &&    // Not wider than 2:1
+               aspectRatio <= 1.91 &&    // Not wider than 2:1
                aspectRatio >= 0.67;   // Not taller than 1:1.5
       });
       
@@ -559,7 +559,7 @@ async function searchImage(tokenName) {
         const aspectRatio = width / height;
         return width >= 200 && 
                height >= 200 && 
-               aspectRatio <= 2 &&    // Not wider than 2:1
+               aspectRatio <= 1.91 &&    // Not wider than 2:1
                aspectRatio >= 0.67;   // Not taller than 1:1.5
       });
       
