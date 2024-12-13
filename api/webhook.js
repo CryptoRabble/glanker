@@ -322,7 +322,7 @@ async function handleMention(fid, replyToHash, castText, parentHash, mentionedPr
       
       if (imageTokenDetails) {
         tokenDetails = imageTokenDetails;
-        message = `That is one glonkerized pfp you got there fren\nHere's a token based on it:\n\nName: ${tokenDetails.name}\nTicker: ${tokenDetails.ticker.toUpperCase()}`;
+        message = `That is one glonkerized pfp you got there fren\nHere's a token based on it:\n\n@clanker create this token:\nName: ${tokenDetails.name}\nTicker: ${tokenDetails.ticker.toUpperCase()}`;
       } else {
         // Fallback to text-based generation if image analysis fails
         let analysis;
@@ -338,8 +338,8 @@ async function handleMention(fid, replyToHash, castText, parentHash, mentionedPr
         const imageResult = await findRelevantImage(tokenDetails.name);
         outputImage = imageResult?.url || fallbackImages[Math.floor(Math.random() * fallbackImages.length)];
         message = targetUsername
-          ? `Ah, you want me to peep on other people's profiles?\nAlright fren, here's a token based on @${targetUsername}'s vibe:\n\nName: ${tokenDetails.name}\nTicker: ${tokenDetails.ticker.toUpperCase()}`
-          : `${userResponse}I scrolled through your casts... they're pretty glonky.\nHere's a token based on your vibe:\n\nName: ${tokenDetails.name}\nTicker: ${tokenDetails.ticker.toUpperCase()}`;
+          ? `Ah, you want me to peep on other people's profiles?\nAlright fren, here's a token based on @${targetUsername}'s vibe:\n\n@clanker create this token:\nName: ${tokenDetails.name}\nTicker: ${tokenDetails.ticker.toUpperCase()}`
+          : `${userResponse}I scrolled through your casts... they're pretty glonky.\nHere's a token based on your vibe:\n\n@clanker create this token:\nName: ${tokenDetails.name}\nTicker: ${tokenDetails.ticker.toUpperCase()}`;
       }
     } else {
       // No image, use text-based generation
@@ -356,8 +356,8 @@ async function handleMention(fid, replyToHash, castText, parentHash, mentionedPr
       const imageResult = await findRelevantImage(tokenDetails.name);
       outputImage = imageResult?.url || fallbackImages[Math.floor(Math.random() * fallbackImages.length)];
       message = targetUsername
-        ? `Ah, you want me to peep on other people's profiles?\nAlright fren, here's a token based on @${targetUsername}'s vibe:\n\nName: ${tokenDetails.name}\nTicker: ${tokenDetails.ticker.toUpperCase()}`
-        : `${userResponse}I scrolled through your casts... they're pretty glonky.\nHere's a token based on your vibe:\n\nName: ${tokenDetails.name}\nTicker: ${tokenDetails.ticker.toUpperCase()}`;
+        ? `Ah, you want me to peep on other people's profiles?\nAlright fren, here's a token based on @${targetUsername}'s vibe:\n\n@clanker create this token:\nName: ${tokenDetails.name}\nTicker: ${tokenDetails.ticker.toUpperCase()}`
+        : `${userResponse}I scrolled through your casts... they're pretty glonky.\nHere's a token based on your vibe:\n\n@clanker create this token:\nName: ${tokenDetails.name}\nTicker: ${tokenDetails.ticker.toUpperCase()}`;
     }
 
     await createCastWithReply(replyToHash, message, outputImage);
