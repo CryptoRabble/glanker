@@ -322,7 +322,7 @@ async function handleMention(fid, replyToHash, castText, parentHash, mentionedPr
       
       if (imageTokenDetails) {
         tokenDetails = imageTokenDetails;
-        message = `That is one glonkerized pfp you got there fren\nHere's a token based on it:\n\n@clanker create this token:\nName: ${tokenDetails.name}\nTicker: ${tokenDetails.ticker.toUpperCase()}`;
+        message = `That is one glonkerized image fren\nHere's a token based on it:\n\n@clanker create this token:\nName: ${tokenDetails.name}\nTicker: ${tokenDetails.ticker.toUpperCase()}`;
       } else {
         // Fallback to text-based generation if image analysis fails
         let analysis;
