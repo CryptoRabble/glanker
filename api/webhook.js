@@ -413,13 +413,11 @@ async function generateTokenDetails(posts) {
       messages: [{
         role: "user",
         content: `
-        
-        You are an expert at creating fun memecoins based on a user's posts on Warpcast. You will assist me in doing so.
-        Generate a memecoin crypto token name based on these posts. 
-        You should take all posts into consideration and create an general idea for yourself on the personality of the person on which you base the memecoin:
+        Generate a meme token name and ticker based on this user's posts. 
+        You should take all posts into consideration and create an general idea for yourself on the personality of the person on which you base the token:
         User's posts: ${combinedContent}
 
-        Please provide a memecoin token name and ticker. The name should roast the user slightly, and be fun, catchy, unique, and suitable for a memecoin token - come up with something completely fresh - the more obscure the better.
+        Please provide a token name and ticker. The name should roast the user, and be fun, catchy, unique, and suitable for a memecoin token - come up with something completely fresh - the more obscure the better.
 
         Rules: 
         - Output only the name and ticker, each on a separate line. Nothing more.
