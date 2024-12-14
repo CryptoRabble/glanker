@@ -546,7 +546,7 @@ async function searchImage(tokenName) {
         params: {
           api_key: process.env.GIPHY_API_KEY,
           q: shortQuery,
-          limit: 3,
+          limit: 2,
           rating: 'pg-13'
         }
       }
