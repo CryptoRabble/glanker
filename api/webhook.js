@@ -104,7 +104,11 @@ async function handleMention(fid, replyToHash, castText, parentHash, mentionedPr
     const isPfpRequest = castText.toLowerCase().includes('my pfp') || 
                         castText.toLowerCase().includes('my profile pic') ||
                         castText.toLowerCase().includes('my profile picture') ||
-                        castText.toLowerCase().includes('my profile image');
+                        castText.toLowerCase().includes('my profile image') ||
+                        castText.toLowerCase().includes('profile pic token') ||
+                        castText.toLowerCase().includes('profile picture token') ||
+                        castText.toLowerCase().includes('profile imagetoken') ||
+                        castText.toLowerCase().includes('pfp token');
     
     // Add PFP check early in the function
     if (isPfpRequest) {
