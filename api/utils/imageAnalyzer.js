@@ -74,13 +74,13 @@ export async function analyzeImage(castData) {
                         Rules:
                         - Output only the name and ticker, each on a separate line. Nothing more.
                         - Do not use these words in any part of the output: Degen, crypto, obscure, vibe, vibecoin, coin, incoherent, coherent, quirky, blockchain, wild, blonde, anon, clanker, obscure, pot, base, mfer, mfers, stoner, weed, based, glonk, glonky, bot, simple, roast, dog, invest, buy, purchase, frames, quirky, meme, milo, memecoin, Doge, Pepe, scene, scenecoin, launguage, name, farther, higher, bleu, moxie, warpcast, farcaster.
-                        - Use only the english alphabet
-                        - Do not use the letters 'Q', 'X', and 'Z' too much
-                        - Do not use any existing popular memecoin names in the output
+                        - The name should not have 'token' or 'coin' in it
                         - The name should be a real word
                         - The name can be 1 or 2 words
-                        - The name should not have 'token' or 'coin' in it
-                        - The ticker should be exactly the same as the name `
+                        - The ticker should be the same as the name
+                        - Use only the english alphabet
+                        - Do not use the letters 'Q', 'X', and 'Z' too much
+                        - Do not use any existing popular memecoin names in the output`
                     }
                 ]
             }]
