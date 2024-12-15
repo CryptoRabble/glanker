@@ -616,7 +616,7 @@ async function searchImage(tokenName) {
         const aspectRatio = width / height;
         return width >= 200 && 
                height >= 200 && 
-               aspectRatio <= 2 &&    // Not wider than 2:1
+               aspectRatio <= 3 &&    // Not wider than 3:1
                aspectRatio >= 0.67;   // Not taller than 1:1.5
       });
       
