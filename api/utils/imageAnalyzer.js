@@ -79,7 +79,8 @@ export async function analyzeImage(castData) {
                         - Do not use any existing popular memecoin names in the output
                         - The name should be a real word
                         - The name can be 1 or 2 words
-                        - The ticker should be exactly the same as the name (if the name is less than 10 characters)`
+                        - The name should not have 'token' or 'coin' in it
+                        - If the name is less than 10 characters, the ticker should be exactly the same as the name `
                     }
                 ]
             }]

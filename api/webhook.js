@@ -3,7 +3,7 @@ import { NeynarAPIClient, Configuration } from "@neynar/nodejs-sdk";
 import { Anthropic } from '@anthropic-ai/sdk';
 import axios from 'axios';
 import crypto from 'crypto';
-import { safeRedisGet, safeRedisSet } from './utils/redis.js';
+import { safeRedisGet, safeRedisSet, safeRedisDel } from './utils/redis.js';
 import { analyzeImage } from './utils/imageAnalyzer.js';
 
 // Initialize clients
@@ -97,6 +97,30 @@ async function getFirstChildCast(parentHash) {
   }
 }
 
+function isReferringToParentCast(text) {
+  const referenceTerms = [
+    'this cast',
+    'above cast',
+    'parent cast',
+    'previous cast',
+    'that cast',
+    'this post',
+    'above post',
+    'parent post',
+    'previous post',
+    'that post',
+    'the post',
+    'this cast',
+    'his cast',
+    'her cast',
+    'their cast',
+    'his post',
+    'her post',
+    'their post',
+  ];
+  return referenceTerms.some(term => text.toLowerCase().includes(term));
+}
+
 async function handleMention(fid, replyToHash, castText, parentHash, mentionedProfiles, castData) {
   try {
     console.log('Handling mention from FID:', fid);
@@ -118,7 +142,7 @@ async function handleMention(fid, replyToHash, castText, parentHash, mentionedPr
       
       if (existingPfp) {
         console.log('User already has PFP token:', existingPfp);
-        await createCastWithReply(replyToHash, "You can only create one pfp token atm fren, need to keep that rarity high.\n\nHit up my gloinked creator DiviFlyy if you need a fresh one!");
+        await createCastWithReply(replyToHash, "Only one pfp token per user fren, need to keep that rarity high.\n\nHit up my gloinked creator DiviFlyy if you need a fresh one!");
         return;
       }
     }
@@ -172,13 +196,13 @@ async function handleMention(fid, replyToHash, castText, parentHash, mentionedPr
 
           Info about you:
           - Your name is glanker (only mention it if the user asks about it)
-          - You create banger tokens based on user's casts (only mention it if the user asks about you)
+          - You create banger tokens based on user's casts (only mention it if the user asks about it)
           - You know clanker, he's your neighbor, and he's up all night creating tokens (only mention him if the user asks about him)
           - You work nights at the zoo as a volunteer, this is how you know bogusbob (a giraffe) (only mention him if the user asks about him)
 
           Rules:
           - Only mention clanker if the user asks about him
-          - Only mention your name if the user asks about you
+          - Only mention your name if the user asks about it
           - Only mention bogusbob if the user asks about him
           - Do not tag anyone in your response
           - Output ONLY the response. Nothing more.
@@ -255,24 +279,52 @@ async function handleMention(fid, replyToHash, castText, parentHash, mentionedPr
       console.log('Found profile picture:', pfpUrl);
       
       if (pfpUrl) {
-        hasImageEmbed = true;
-        castData = {
-          embeds: [{
-            url: pfpUrl,
-            metadata: {
-              content_type: 'image/jpeg'
-            }
-          }]
-        };
+        try {
+          hasImageEmbed = true;
+          castData = {
+            embeds: [{
+              url: pfpUrl,
+              metadata: {
+                content_type: 'image/jpeg'
+              }
+            }]
+          };
 
-        // Store PFP request in Redis permanently (no expiration)
-        const castUrl = `https://warpcast.com/${username}/${replyToHash}`;
-        await safeRedisSet(`${username}:pfp`, JSON.stringify({
-          castUrl: castUrl,
-          hash: replyToHash,
-          timestamp: Date.now()
-        }));
+          // Store PFP request in Redis permanently (no expiration)
+          const castUrl = `https://warpcast.com/${username}/${replyToHash}`;
+          await safeRedisSet(`${username}:pfp`, JSON.stringify({
+            castUrl: castUrl,
+            hash: replyToHash,
+            timestamp: Date.now()
+          }));
+          
+          // Try to generate token from PFP
+          const imageData = {
+            embeds: [{
+              url: pfpUrl,
+              metadata: {
+                content_type: 'image/jpeg'
+              }
+            }]
+          };
+          
+          const imageTokenDetails = await analyzeImage(imageData);
+          if (!imageTokenDetails) {
+            throw new Error('Failed to analyze profile picture');
+          }
+          
+          tokenDetails = imageTokenDetails;
+          message = `That is one glanked out pfp fren.\nHere's a token based on it:\n\nName: ${tokenDetails.name}\nTicker: ${tokenDetails.ticker.toUpperCase()}`;
+          outputImage = pfpUrl;
+          
+        } catch (pfpError) {
+          console.error('Error processing PFP request:', pfpError);
+          await safeRedisDel(`${username}:pfp`);
+          await createCastWithReply(replyToHash, "Sorry fren, I had trouble processing your profile picture! Make sure it's less than 5MB and try again.");
+          return;
+        }
       } else {
+        await safeRedisDel(`${username}:pfp`);
         await createCastWithReply(replyToHash, "Sorry fren, I couldn't find your profile picture!");
         return;
       }
@@ -328,7 +380,7 @@ async function handleMention(fid, replyToHash, castText, parentHash, mentionedPr
         tokenDetails = imageTokenDetails;
         message = isPfpRequest 
           ? `Woah fren, that's one glankster pfp!\nI'll immortalize it as a clanker token:\n\n@clanker create this token:\nName: ${tokenDetails.name}\nTicker: ${tokenDetails.ticker.toUpperCase()}`
-          : `That is one glonkerized image fren\nHere's a token based on it:\n\n@clanker create this token:\nName: ${tokenDetails.name}\nTicker: ${tokenDetails.ticker.toUpperCase()}`;
+          : `That is one glonkerized image fren.\nHere's a token based on it:\n\n@clanker create this token:\nName: ${tokenDetails.name}\nTicker: ${tokenDetails.ticker.toUpperCase()}`;
       } else {
         // Fallback to text-based generation if image analysis fails
         let analysis;
@@ -351,19 +403,37 @@ async function handleMention(fid, replyToHash, castText, parentHash, mentionedPr
       // No image, use text-based generation
       let analysis;
       if (parentHash) {
-        analysis = await getRootCast(parentHash);
-        if (!analysis) {
-          analysis = await analyzeCasts(targetFid);
+        // Add new condition for referring to parent cast
+        if (isReferringToParentCast(castText)) {
+          console.log('User is referring to parent cast, analyzing only parent');
+          analysis = await getRootCast(parentHash);
+          if (!analysis) {
+            console.log('Failed to get parent cast, falling back to user analysis');
+            analysis = await analyzeCasts(targetFid);
+          }
+          tokenDetails = await generateTokenDetails(analysis, true);
+        } else {
+          // Existing logic
+          analysis = await getRootCast(parentHash);
+          if (!analysis) {
+            analysis = await analyzeCasts(targetFid);
+          }
+          tokenDetails = await generateTokenDetails(analysis, false);
         }
       } else {
         analysis = await analyzeCasts(targetFid);
+        tokenDetails = await generateTokenDetails(analysis, false);
       }
-      tokenDetails = await generateTokenDetails(analysis);
+      
       const imageResult = await findRelevantImage(tokenDetails.name);
       outputImage = imageResult?.url || fallbackImages[Math.floor(Math.random() * fallbackImages.length)];
+      
+      // Modify message based on whether we're analyzing parent cast
       message = targetUsername
         ? `Ah, you want me to peep on other people's profiles?\nAlright fren, here's a token based on @${targetUsername}'s vibe:\n\n@clanker create this token:\nName: ${tokenDetails.name}\nTicker: ${tokenDetails.ticker.toUpperCase()}`
-        : `${userResponse}I scrolled through your casts... they're pretty glonky.\nHere's a token based on your vibe:\n\n@clanker create this token:\nName: ${tokenDetails.name}\nTicker: ${tokenDetails.ticker.toUpperCase()}`;
+        : isReferringToParentCast(castText)
+          ? `This cast is gloinked to the glaximum.\nHere's a token based on it:\n\n@clanker create this token:\nName: ${tokenDetails.name}\nTicker: ${tokenDetails.ticker.toUpperCase()}`
+          : `${userResponse}I scrolled through your casts... they're pretty glonky.\nHere's a token based on your vibe:\n\n@clanker create this token:\nName: ${tokenDetails.name}\nTicker: ${tokenDetails.ticker.toUpperCase()}`;
     }
 
     await createCastWithReply(replyToHash, message, outputImage);
@@ -409,17 +479,30 @@ async function analyzeCasts(fid) {
   }
 }
 
-async function generateTokenDetails(posts) {
+async function generateTokenDetails(posts, isSingleCast = false) {
   const combinedContent = posts.map(p => p.text).join(' ');
 
   try {
-    const message = await anthropic.messages.create({
-      model: "claude-3-sonnet-20240229",
-      max_tokens: 100,
-      messages: [{
-        role: "user",
-        content: `
-        Generate a meme token name and ticker based on this user's posts. 
+    const promptContent = isSingleCast ? 
+      `Generate a meme token name and ticker based specifically on this cast's content:
+      "${combinedContent}"
+      
+      Create a token that directly references or plays off the specific content, theme, or message of this cast.
+
+      Rules: 
+      - Output only the name and ticker, each on a separate line. Nothing more.
+      - The name should cleverly reference the specific content or theme of the cast
+      - The name should not have 'token' or 'coin' in it
+      - Do not use these words in any part of the output: Degen, crypto, obscure, incoherent, coherent, quirky, blockchain, wild, blonde, anon, clanker, obscure, pot, base, mfer, mfers, stoner, weed, based, glonk, glonky, bot, simple, roast, dog, invest, buy, purchase, frames, quirky, meme, milo, memecoin, Doge, Pepe, scene, scenecoin, launguage, name, farther, higher, bleu, moxie, warpcast, farcaster.
+      - Use only the english alphabet
+      - Do not use the letters 'Q', 'X', and 'Z' too much
+      - Do not use any existing popular memecoin names in the output
+      - The name should be a real word
+      - The name can be 1 or 2 words
+      - If the name is less than 10 characters, the ticker should be exactly the same as the name `
+      :
+      // Original prompt for analyzing multiple casts
+      ` Generate a meme token name and ticker based on this user's posts. 
         You should take all posts into consideration and create an general idea for yourself on the personality of the person on which you base the token:
         User's posts: ${combinedContent}
 
@@ -433,7 +516,15 @@ async function generateTokenDetails(posts) {
         - Do not use any existing popular memecoin names in the output
         - The name should be a real word
         - The name can be 1 or 2 words
-        - The ticker should be exactly the same as the name (if the name is less than 10 characters)`
+        - The name should not have 'token' or 'coin' in it
+        - If the name is less than 10 characters, the ticker should be exactly the same as the name `
+
+    const message = await anthropic.messages.create({
+      model: "claude-3-sonnet-20240229",
+      max_tokens: 100,
+      messages: [{
+        role: "user",
+        content: promptContent
       }]
     });
 
@@ -512,7 +603,7 @@ async function searchImage(tokenName) {
         params: {
           api_key: process.env.GIPHY_API_KEY,
           q: tokenName,
-          limit: 5,
+          limit: 2,
           rating: 'pg-13'
         }
       }

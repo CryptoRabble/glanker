@@ -63,3 +63,14 @@ export async function safeRedisSet(key, value) {
     console.error(`Error setting Redis key ${key}:`, error);
   }
 }
+
+export async function safeRedisDel(key) {
+  try {
+    console.log(`Attempting to delete Redis key: ${key}`);
+    const client = await getRedisClient();
+    await client.del(key);
+    console.log(`Redis DEL - Key: ${key} deleted successfully`);
+  } catch (error) {
+    console.error(`Error deleting Redis key ${key}:`, error);
+  }
+}
