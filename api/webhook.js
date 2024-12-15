@@ -615,10 +615,10 @@ async function searchImage(tokenName) {
         const width = parseInt(gif.images.original.width);
         const height = parseInt(gif.images.original.height);
         const aspectRatio = width / height;
-        return width >= 200 && 
-               height >= 200 && 
-               aspectRatio <= 3 &&    // Not wider than 3:1
-               aspectRatio >= 0.67;   // Not taller than 1:1.5
+        return width >= 100 &&    // Reduced from 200
+               height >= 100 &&   // Reduced from 200
+               aspectRatio <= 4 &&    // More lenient width ratio (was 3)
+               aspectRatio >= 0.4;    // More lenient height ratio (was 0.67)
       });
       
       if (giphyResults.length > 0) {
@@ -653,10 +653,10 @@ async function searchImage(tokenName) {
         const width = parseInt(gif.images.original.width);
         const height = parseInt(gif.images.original.height);
         const aspectRatio = width / height;
-        return width >= 200 && 
-               height >= 200 && 
-               aspectRatio <= 3 &&    // Not wider than 2:1
-               aspectRatio >= 0.67;   // Not taller than 1:1.5
+        return width >= 100 &&    // Reduced from 200
+               height >= 100 &&   // Reduced from 200
+               aspectRatio <= 4 &&    // More lenient width ratio (was 3)
+               aspectRatio >= 0.4;    // More lenient height ratio (was 0.67)
       });
       
       if (secondGiphyResults.length > 0) {
