@@ -488,12 +488,13 @@ async function generateTokenDetails(posts, isSingleCast = false) {
       "${combinedContent}"
       
       Create a token that directly references or plays off the specific content, theme, or message of this cast.
+      It should not be too obscure and it should be obvious that it relates to the cast.
 
       Rules: 
       - Output only the name and ticker, each on a separate line. Nothing more.
       - The name should cleverly reference the specific content or theme of the cast
       - The name should not have 'token' or 'coin' in it
-      - Do not use these words in any part of the output: Degen, crypto, obscure, incoherent, coherent, quirky, blockchain, wild, blonde, anon, clanker, obscure, pot, base, mfer, mfers, stoner, weed, based, glonk, glonky, bot, simple, roast, dog, invest, buy, purchase, frames, quirky, meme, milo, memecoin, Doge, Pepe, scene, scenecoin, launguage, name, farther, higher, bleu, moxie, warpcast, farcaster.
+      - Do not use these words in any part of the output: Degen, crypto, obscure, obvious, incoherent, coherent, quirky, blockchain, wild, blonde, anon, clanker, obscure, pot, base, mfer, mfers, stoner, weed, based, glonk, glonky, bot, simple, roast, dog, invest, buy, purchase, frames, quirky, meme, milo, memecoin, Doge, Pepe, scene, scenecoin, launguage, name, farther, higher, bleu, moxie, warpcast, farcaster.
       - Use only the english alphabet
       - Do not use the letters 'Q', 'X', and 'Z' too much
       - Do not use any existing popular memecoin names in the output
@@ -510,7 +511,7 @@ async function generateTokenDetails(posts, isSingleCast = false) {
 
         Rules: 
         - Output only the name and ticker, each on a separate line. Nothing more.
-        - Do not use these words in any part of the output: Degen, crypto, obscure, incoherent, coherent, quirky, blockchain, wild, blonde, anon, clanker, obscure, pot, base, mfer, mfers, stoner, weed, based, glonk, glonky, bot, simple, roast, dog, invest, buy, purchase, frames, quirky, meme, milo, memecoin, Doge, Pepe, scene, scenecoin, launguage, name, farther, higher, bleu, moxie, warpcast, farcaster.
+        - Do not use these words in any part of the output: Degen, crypto, obscure, incoherent, obvious, coherent, quirky, blockchain, wild, blonde, anon, clanker, obscure, pot, base, mfer, mfers, stoner, weed, based, glonk, glonky, bot, simple, roast, dog, invest, buy, purchase, frames, quirky, meme, milo, memecoin, Doge, Pepe, scene, scenecoin, launguage, name, farther, higher, bleu, moxie, warpcast, farcaster.
         - Use only the english alphabet
         - Do not use the letters 'Q', 'X', and 'Z' too much
         - Do not use any existing popular memecoin names in the output
