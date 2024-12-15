@@ -80,7 +80,7 @@ export async function analyzeImage(castData) {
                         - The name should be a real word
                         - The name can be 1 or 2 words
                         - The name should not have 'token' or 'coin' in it
-                        - If the name is less than 10 characters, the ticker should be exactly the same as the name `
+                        - The ticker should be exactly the same as the name `
                     }
                 ]
             }]

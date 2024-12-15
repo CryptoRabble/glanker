@@ -500,7 +500,7 @@ async function generateTokenDetails(posts, isSingleCast = false) {
       - Do not use any existing popular memecoin names in the output
       - The name should be a real word
       - The name can be 1 or 2 words
-      - If the name is less than 10 characters, the ticker should be exactly the same as the name`
+      - The ticker should be exactly the same as the name`
       :
       // Original prompt for analyzing multiple casts
       ` Generate a meme token name and ticker based on this user's posts. 
@@ -518,7 +518,7 @@ async function generateTokenDetails(posts, isSingleCast = false) {
         - The name should be a real word
         - The name can be 1 or 2 words
         - The name should not have 'token' or 'coin' in it
-        - If the name is less than 10 characters, the ticker should be exactly the same as the name`
+        - The ticker should be exactly the same as the name`
 
     const message = await anthropic.messages.create({
       model: "claude-3-sonnet-20240229",
