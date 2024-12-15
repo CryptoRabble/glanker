@@ -488,19 +488,19 @@ async function generateTokenDetails(posts, isSingleCast = false) {
       "${combinedContent}"
       
       Create a token that directly references or plays off the specific content, theme, or message of this cast.
-      It should not be too obscure and it should be obvious that it relates to the cast.
+      It should be obvious that it relates to the cast, using a stand-out word(s) from the cast when possible.
 
       Rules: 
       - Output only the name and ticker, each on a separate line. Nothing more.
       - The name should cleverly reference the specific content or theme of the cast
       - The name should not have 'token' or 'coin' in it
-      - Do not use these words in any part of the output: Degen, crypto, obscure, obvious, incoherent, coherent, quirky, blockchain, wild, blonde, anon, clanker, obscure, pot, base, mfer, mfers, stoner, weed, based, glonk, glonky, bot, simple, roast, dog, invest, buy, purchase, frames, quirky, meme, milo, memecoin, Doge, Pepe, scene, scenecoin, launguage, name, farther, higher, bleu, moxie, warpcast, farcaster.
+      - Do not use these words in any part of the output: Degen, crypto, stand-out, obscure, obvious, incoherent, coherent, quirky, blockchain, wild, blonde, anon, clanker, obscure, pot, base, mfer, mfers, stoner, weed, based, glonk, glonky, bot, simple, roast, dog, invest, buy, purchase, frames, quirky, meme, milo, memecoin, Doge, Pepe, scene, scenecoin, launguage, name, farther, higher, bleu, moxie, warpcast, farcaster.
       - Use only the english alphabet
       - Do not use the letters 'Q', 'X', and 'Z' too much
       - Do not use any existing popular memecoin names in the output
       - The name should be a real word
       - The name can be 1 or 2 words
-      - If the name is less than 10 characters, the ticker should be exactly the same as the name `
+      - If the name is less than 10 characters, the ticker should be exactly the same as the name`
       :
       // Original prompt for analyzing multiple casts
       ` Generate a meme token name and ticker based on this user's posts. 
