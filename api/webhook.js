@@ -568,7 +568,7 @@ export default async function handler(req, res) {
 
         const isAuthorized = await isAuthorizedCommenter(req.body.data);
         
-        if (isAuthorized) {
+        if (isAuthorized.isAuthorized) {
           const authorFid = req.body.data.author.fid;
           const castHash = req.body.data.hash;
           const castText = req.body.data.text;
@@ -587,6 +587,7 @@ export default async function handler(req, res) {
           ); 
         } else {
           console.log('Unauthorized interaction - ignoring');
+          return res.status(200).json({ status: 'Unauthorized interaction ignored' });
         }
       }
 

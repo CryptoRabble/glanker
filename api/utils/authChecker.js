@@ -17,8 +17,8 @@ const provider = new ethers.JsonRpcProvider(process.env.RPC_URL);
 const factoryContract = new ethers.Contract(FACTORY_ADDRESS, FACTORY_ABI, provider);
 
 export async function isAuthorizedCommenter(cast) {
-  // Check if the cast author is Clanker
-  if (cast.author.fid.toString() === '874542') {
+  // Case 1: Check if the cast author is Clanker responding to glanker's prompt
+  if (cast.author.fid.toString() === '874542' && cast.parent_author?.fid?.toString() === '885622') {
     // Extract token address from URL in text or embeds
     const textUrlMatch = cast.text.match(/https:\/\/clanker\.world\/clanker\/(0x[a-fA-F0-9]{40})/);
     const embedUrlMatch = cast.embeds?.[0]?.url?.match(/https:\/\/clanker\.world\/clanker\/(0x[a-fA-F0-9]{40})/);
@@ -33,12 +33,13 @@ export async function isAuthorizedCommenter(cast) {
     }
   }
 
-  // Check if the bot was directly mentioned
+  // Case 2: Check if this is a new request explicitly mentioning glanker
   if (cast.mentioned_profiles?.some(profile => 
     profile.fid.toString() === '885622'  // Bot's FID
   )) {
     return { isAuthorized: true };
   }
 
+  // Not authorized in all other cases
   return { isAuthorized: false };
 }
