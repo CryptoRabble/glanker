@@ -26,24 +26,10 @@ export async function isAuthorizedCommenter(cast) {
     const tokenAddress = textUrlMatch?.[1] || embedUrlMatch?.[1];
 
     if (tokenAddress) {
-      try {
-        // Query the factory contract for deployment info
-        const deploymentInfo = await factoryContract.deploymentInfoForToken(tokenAddress);
-        console.log('Deployment info:', deploymentInfo);
-        
-        return {
-          isAuthorized: true,
-          positionId: deploymentInfo?.positionId?.toString(),
-          tokenAddress: tokenAddress
-        };
-      } catch (error) {
-        console.error('Error fetching deployment info:', error);
-        // If contract call fails, still process the token
-        return { 
-          isAuthorized: true,
-          tokenAddress: tokenAddress
-        };
-      }
+      return {
+        isAuthorized: true,
+        tokenAddress: tokenAddress
+      };
     }
   }
 

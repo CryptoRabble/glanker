@@ -56,14 +56,13 @@ const fallbackImages = [
   'https://i.imgur.com/QdJTA68.jpeg'
 ];
 
-async function handleMention(fid, replyToHash, castText, parentHash, mentionedProfiles, castData, positionId, tokenAddress) {
+async function handleMention(fid, replyToHash, castText, parentHash, mentionedProfiles, castData, tokenAddress) {
   try {
     console.log('Handling mention from FID:', fid);
-    console.log('Position ID:', positionId);
     console.log('Token Address:', tokenAddress);
 
-    // If we have a position ID and it's from Clanker (FID 874542), only handle the token transfer
-    if (positionId && tokenAddress && fid.toString() === '874542') {
+    // If it's from Clanker and has a token address, handle the token transfer
+    if (fid.toString() === '874542' && tokenAddress) {
       try {
         const provider = new ethers.JsonRpcProvider(process.env.RPC_URL);
         const signer = new ethers.Wallet(process.env.PRIVATE_KEY, provider);
@@ -78,6 +77,10 @@ async function handleMention(fid, replyToHash, castText, parentHash, mentionedPr
         if (!parentCast || !parentCast.cast) {
           throw new Error('Could not find parent cast information');
         }
+
+        // Get position ID from LP contract
+        const positionId = await lpContract.getPositionIdForToken(tokenAddress);
+        console.log('Position ID from LP contract:', positionId);
 
         let recipientAddress;
 
@@ -102,7 +105,7 @@ async function handleMention(fid, replyToHash, castText, parentHash, mentionedPr
           throw new Error('Could not find valid recipient address');
         }
 
-        // Create the UserRewardRecipient struct
+        // Create the UserRewardRecipient struct with the position ID we just got
         const recipientStruct = {
           recipient: recipientAddress,
           lpTokenId: positionId
@@ -125,9 +128,9 @@ async function handleMention(fid, replyToHash, castText, parentHash, mentionedPr
       }
     }
 
-    // If it's Clanker but without position ID/token, still return without responding
+    // If it's Clanker, don't process further
     if (fid.toString() === '874542') {
-      console.log('Message from Clanker without token info - ignoring');
+      console.log('Message from Clanker - ignoring');
       return;
     }
 
@@ -551,7 +554,8 @@ export default async function handler(req, res) {
             castText, 
             parentHash, 
             mentionedProfiles,
-            req.body.data
+            req.body.data,
+            isAuthorized.tokenAddress
           ); 
         } else {
           console.log('Unauthorized interaction - ignoring');
