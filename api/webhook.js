@@ -121,27 +121,45 @@ async function handleMention(fid, replyToHash, castText, parentHash, mentionedPr
             text: grandparentCast.cast.text,
             author: {
               username: grandparentCast.cast.author.username,
-              custody_address: grandparentCast.cast.author.custody_address
+              verifications: grandparentCast.cast.author.verifications
             }
           });
 
-          // If parent was replying to an image, use grandparent's address
-          recipientAddress = grandparentCast.cast.author.custody_address;
+          // Get grandparent cast (DiviFlyy's request)
+          const greatGrandparentCast = await neynar.lookupCastByHashOrWarpcastUrl({
+            type: 'hash',
+            identifier: grandparentCast.cast.parent_hash
+          });
+          
+          // Use the image poster's verified address
+          recipientAddress = greatGrandparentCast.cast.author.verifications?.[0];
+          
+          if (!recipientAddress) {
+            console.log('No verified address found for image poster:', greatGrandparentCast.cast.author.username);
+            throw new Error('Image poster has no verified address');
+          }
+          
           console.log('Using image poster address:', {
-            username: grandparentCast.cast.author.username,
-            address: recipientAddress
+            username: greatGrandparentCast.cast.author.username,
+            verified_address: recipientAddress
           });
         } else {
-          // Otherwise use parent's address
-          recipientAddress = parentCast.cast.author.custody_address;
-          console.log('Using parent cast author address:', {
-            username: parentCast.cast.author.username,
-            address: recipientAddress
+          // Default case: use DiviFlyy's verified address
+          recipientAddress = grandparentCast.cast.author.verifications?.[0];
+          
+          if (!recipientAddress) {
+            console.log('No verified address found for requester:', grandparentCast.cast.author.username);
+            throw new Error('Requester has no verified address');
+          }
+
+          console.log('Using requester address:', {
+            username: grandparentCast.cast.author.username,
+            verified_address: recipientAddress
           });
         }
 
         if (!recipientAddress) {
-          throw new Error('Could not find valid recipient address');
+          throw new Error('Could not find valid verified address for recipient');
         }
 
         // Create the UserRewardRecipient struct
