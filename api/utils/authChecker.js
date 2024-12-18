@@ -17,7 +17,7 @@ const provider = new ethers.JsonRpcProvider(process.env.RPC_URL);
 const factoryContract = new ethers.Contract(FACTORY_ADDRESS, FACTORY_ABI, provider);
 
 export async function isAuthorizedCommenter(cast) {
-  // Check if the cast author is the authorized FID
+  // Check if the cast author is Clanker
   if (cast.author.fid.toString() === '874542') {
     // First check the cast text
     const textUrlMatch = cast.text.match(/https:\/\/clanker\.world\/clanker\/(0x[a-fA-F0-9]{40})/);
@@ -55,25 +55,6 @@ export async function isAuthorizedCommenter(cast) {
     profile.fid.toString() === '885622'  // Bot's FID
   )) {
     return { isAuthorized: true };
-  }
-
-  // If this is a reply to another cast, check if it's replying to the bot's cast
-  if (cast.parent_hash) {
-    try {
-      const parentCast = await neynar.lookupCastByHashOrWarpcastUrl({
-        type: 'hash',
-        identifier: cast.parent_hash
-      });
-      
-      // If parent cast is from the bot and commenter is authorized FID
-      if (parentCast.cast.author.fid.toString() === '885622' && 
-          cast.author.fid.toString() === '874542') {
-        return { isAuthorized: true };
-      }
-    } catch (error) {
-      console.error('Error checking parent cast:', error);
-      return { isAuthorized: false };
-    }
   }
 
   return { isAuthorized: false };
