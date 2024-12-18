@@ -11,7 +11,7 @@ import { analyzeCasts, generateTokenDetails } from './utils/tokenGenerator.js';
 import { ethers } from 'ethers'
 import { LP_ABI } from './utils/lpabi.js';
 import { FACTORY_ABI } from './utils/factoryabi.js';
-const LP_CONTRACT_ADDRESS = '0x503e881ace7b46f99168964aa7a484d87926bb17'
+const LP_CONTRACT_ADDRESS = '0x618A9840691334eE8d24445a4AdA4284Bf42417D'
 const FACTORY_ADDRESS = '0x732560fa1d1A76350b1A500155BA978031B53833'
 
 
@@ -72,9 +72,21 @@ async function handleMention(fid, replyToHash, castText, parentHash, mentionedPr
         const factoryContract = new ethers.Contract(FACTORY_ADDRESS, FACTORY_ABI, provider);
         
         // Get parent cast (the one your bot replied to)
+        console.log('Parent cast hash:', parentHash);
+
         const parentCast = await neynar.lookupCastByHashOrWarpcastUrl({
           type: 'hash',
           identifier: parentHash
+        });
+
+        console.log('Parent cast details:', {
+          hash: parentCast.cast.hash,
+          text: parentCast.cast.text,
+          author: {
+            username: parentCast.cast.author.username,
+            custody_address: parentCast.cast.author.custody_address
+          },
+          parent_hash: parentCast.cast.parent_hash
         });
 
         if (!parentCast || !parentCast.cast) {
@@ -93,18 +105,39 @@ async function handleMention(fid, replyToHash, castText, parentHash, mentionedPr
         // Check if parent cast was replying to an image AND bot's message indicates it was an image token
         if (parentCast.cast.parent_hash && 
             parentCast.cast.text.includes('dropped a banger image!')) {
+          console.log('Found image token case, parent cast:', {
+            hash: parentCast.cast.hash,
+            text: parentCast.cast.text,
+            parent_hash: parentCast.cast.parent_hash
+          });
+
           const grandparentCast = await neynar.lookupCastByHashOrWarpcastUrl({
             type: 'hash',
             identifier: parentCast.cast.parent_hash
           });
 
+          console.log('Grandparent cast details:', {
+            hash: grandparentCast.cast.hash,
+            text: grandparentCast.cast.text,
+            author: {
+              username: grandparentCast.cast.author.username,
+              custody_address: grandparentCast.cast.author.custody_address
+            }
+          });
+
           // If parent was replying to an image, use grandparent's address
           recipientAddress = grandparentCast.cast.author.custody_address;
-          console.log('Using image poster address:', recipientAddress);
+          console.log('Using image poster address:', {
+            username: grandparentCast.cast.author.username,
+            address: recipientAddress
+          });
         } else {
           // Otherwise use parent's address
           recipientAddress = parentCast.cast.author.custody_address;
-          console.log('Using parent cast author address:', recipientAddress);
+          console.log('Using parent cast author address:', {
+            username: parentCast.cast.author.username,
+            address: recipientAddress
+          });
         }
 
         if (!recipientAddress) {
