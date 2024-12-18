@@ -1,10 +1,17 @@
-import { init, fetchQuery } from "@airstack/node";
+import { init } from "@airstack/node";
 import { NeynarAPIClient, Configuration } from "@neynar/nodejs-sdk";
 import { Anthropic } from '@anthropic-ai/sdk';
-import axios from 'axios';
 import crypto from 'crypto';
 import { safeRedisGet, safeRedisSet, safeRedisDel } from './utils/redis.js';
+import { getRootCast, checkUserScore, isReferringToParentCast } from './utils/castUtils.js';
 import { analyzeImage } from './utils/imageAnalyzer.js';
+import { isAuthorizedCommenter } from './utils/authChecker.js';
+import { findRelevantImage } from './utils/imageSearch.js';
+import { analyzeCasts, generateTokenDetails } from './utils/tokenGenerator.js';
+import { ethers } from 'ethers'
+import { LP_ABI } from './utils/lpabi.js';
+const LP_CONTRACT_ADDRESS = '0x503e881ace7b46f99168964aa7a484d87926bb17'
+
 
 // Initialize clients
 init(process.env.AIRSTACK_API_KEY);
@@ -18,10 +25,12 @@ const neynarConfig = new Configuration({
   },
 });
 const neynar = new NeynarAPIClient(neynarConfig);
+export { neynar }; 
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY
 });
+export { anthropic };
 
 const fallbackImages = [
   'https://i.imgur.com/dXCgbhf.jpeg',
@@ -47,82 +56,76 @@ const fallbackImages = [
   'https://i.imgur.com/QdJTA68.jpeg'
 ];
 
-async function getRootCast(hash) {
+async function handleMention(fid, replyToHash, castText, parentHash, mentionedProfiles, castData, positionId, tokenAddress) {
   try {
-    const response = await neynar.lookupCastByHashOrWarpcastUrl({
-      type: 'hash',
-      identifier: hash
-    });
-    
-    return [{
-      text: response.cast.text,
-      castedAtTimestamp: response.cast.timestamp,
-      url: '', 
-      fid: response.cast.author.fid,
-      username: response.cast.author.username
-    }];
-  } catch (error) {
-    console.error('Error fetching root cast:', error);
-    return null;
-  }
-}
+    console.log('Handling mention from FID:', fid);
+    console.log('Position ID:', positionId);
+    console.log('Token Address:', tokenAddress);
 
-async function checkUserScore(fid) {
-  try {
-    const response = await neynar.fetchBulkUsers({ fids: fid.toString() });
-    const userScore = response.users?.[0]?.experimental?.neynar_user_score || 0;
-    
-    console.log('User score for FID:', fid, 'Score:', userScore);
-    return userScore >= 0.25;
-  } catch (error) {
-    console.error('Error checking user score:', error);
-    return false;
-  }
-}
+    // If we have a position ID and it's from Clanker (FID 874542), only handle the token transfer
+    if (positionId && tokenAddress && fid.toString() === '874542') {
+      try {
+        const provider = new ethers.JsonRpcProvider(process.env.RPC_URL);
+        const signer = new ethers.Wallet(process.env.PRIVATE_KEY, provider);
+        const lpContract = new ethers.Contract(LP_CONTRACT_ADDRESS, LP_ABI, signer);
+        
+        // Get parent cast (the one your bot replied to)
+        const parentCast = await neynar.lookupCastByHashOrWarpcastUrl({
+          type: 'hash',
+          identifier: parentHash
+        });
 
-async function getFirstChildCast(parentHash) {
-  try {
-    const response = await neynar.fetchCastsByParent({
-      parentHash: parentHash,
-      limit: 1
-    });
-    
-    if (response.casts && response.casts.length > 0) {
-      return response.casts[0];
+        if (!parentCast || !parentCast.cast) {
+          throw new Error('Could not find parent cast information');
+        }
+
+        let recipientAddress;
+
+        // Check if parent cast was replying to an image AND bot's message indicates it was an image token
+        if (parentCast.cast.parent_hash && 
+            parentCast.cast.text.includes('dropped a banger image!')) {
+          const grandparentCast = await neynar.lookupCastByHashOrWarpcastUrl({
+            type: 'hash',
+            identifier: parentCast.cast.parent_hash
+          });
+
+          // If parent was replying to an image, use grandparent's address
+          recipientAddress = grandparentCast.cast.author.custody_address;
+          console.log('Using image poster address:', recipientAddress);
+        } else {
+          // Otherwise use parent's address
+          recipientAddress = parentCast.cast.author.custody_address;
+          console.log('Using parent cast author address:', recipientAddress);
+        }
+
+        if (!recipientAddress) {
+          throw new Error('Could not find valid recipient address');
+        }
+
+        // Create the UserRewardRecipient struct
+        const recipientStruct = {
+          recipient: recipientAddress,
+          lpTokenId: positionId
+        };
+
+        console.log('Transferring ownership with struct:', recipientStruct);
+
+        // Call replaceUserRewardRecipient
+        const tx = await lpContract.replaceUserRewardRecipient(recipientStruct);
+        console.log('Transaction sent:', tx.hash);
+
+        // Wait for transaction to be mined
+        const receipt = await tx.wait();
+        console.log('Transaction confirmed:', receipt);
+
+        return;
+      } catch (error) {
+        console.error('Error handling LP token transfer:', error);
+        return;
+      }
     }
-    return null;
-  } catch (error) {
-    console.error('Error fetching child cast:', error);
-    return null;
-  }
-}
 
-function isReferringToParentCast(text) {
-  const referenceTerms = [
-    'this cast',
-    'above cast',
-    'parent cast',
-    'previous cast',
-    'that cast',
-    'this post',
-    'above post',
-    'parent post',
-    'previous post',
-    'that post',
-    'the post',
-    'this cast',
-    'his cast',
-    'her cast',
-    'their cast',
-    'his post',
-    'her post',
-    'their post',
-  ];
-  return referenceTerms.some(term => text.toLowerCase().includes(term));
-}
-
-async function handleMention(fid, replyToHash, castText, parentHash, mentionedProfiles, castData) {
-  try {
+    // Continue with normal bot behavior for all other cases
     console.log('Handling mention from FID:', fid);
 
     const isPfpRequest = castText.toLowerCase().includes('my pfp') || 
@@ -380,7 +383,9 @@ async function handleMention(fid, replyToHash, castText, parentHash, mentionedPr
         tokenDetails = imageTokenDetails;
         message = isPfpRequest 
           ? `Woah fren, that's one glankster pfp!\nI'll immortalize it as a clanker token:\n\n@clanker create this token:\nName: ${tokenDetails.name}\nTicker: ${tokenDetails.ticker.toUpperCase()}`
-          : `That is one glonkerized image fren.\nHere's a token based on it:\n\n@clanker create this token:\nName: ${tokenDetails.name}\nTicker: ${tokenDetails.ticker.toUpperCase()}`;
+          : castData.author.fid === fid
+            ? `That is one glonkerized image fren.\nHere's a token based on it:\n\n@clanker create this token:\nName: ${tokenDetails.name}\nTicker: ${tokenDetails.ticker.toUpperCase()}`
+            : `Woah @${castData.author.username} dropped a banger image!\nHere's a token based on it:\n\n@clanker create this token:\nName: ${tokenDetails.name}\nTicker: ${tokenDetails.ticker.toUpperCase()}`;
       } else {
         // Fallback to text-based generation if image analysis fails
         let analysis;
@@ -448,280 +453,6 @@ async function handleMention(fid, replyToHash, castText, parentHash, mentionedPr
   }
 }
 
-
-async function analyzeCasts(fid) {
-  console.log('Analyzing casts for FID:', fid);
-  const query = `
-    query GetLast25CastsByFid {
-      FarcasterCasts(
-        input: {blockchain: ALL, filter: {castedBy: {_eq: "fc_fid:${fid}"}}, limit: 25}
-      ) {
-        Cast {
-          text
-          castedAtTimestamp
-          url
-          fid
-        }
-      }
-    }
-  `;
-
-  try {
-    const { data, error } = await fetchQuery(query);
-    if (error) {
-      throw new Error(error.message);
-    }
-    console.log('Retrieved casts:', data.FarcasterCasts.Cast);
-    return data.FarcasterCasts.Cast;
-  } catch (error) {
-    console.error('Airstack query error:', error);
-    throw error;
-  }
-}
-
-async function generateTokenDetails(posts, isSingleCast = false) {
-  const combinedContent = posts.map(p => p.text).join(' ');
-
-  try {
-    const promptContent = isSingleCast ? 
-      `Generate a meme token name and ticker based specifically on this cast's content:
-      "${combinedContent}"
-      
-      Create a token that directly references or plays off the specific content, theme, or message of this cast.
-      It should be obvious that it relates to the cast, using a stand-out word(s) from the cast when possible.
-
-      Rules: 
-      - Output only the name and ticker, each on a separate line. Nothing more.
-      - The name should cleverly reference the specific content or theme of the cast
-      - Do not use these words in any part of the output: Degen, crypto, stand-out, obscure, obvious, incoherent, coherent, quirky, blockchain, wild, blonde, anon, clanker, obscure, pot, base, mfer, mfers, stoner, weed, based, glonk, glonky, bot, simple, roast, dog, invest, buy, purchase, frames, quirky, meme, milo, memecoin, Doge, Pepe, scene, scenecoin, launguage, name, farther, higher, bleu, moxie, warpcast, farcaster.
-      - The name should be a real word
-      - The name can be 1 or 2 words
-      - The ticker should be the same as the name
-      - The name should not have 'token' or 'coin' in it
-      - Use only the english alphabet
-      - Do not use the letters 'Q', 'X', and 'Z' too much
-      - Do not use any existing popular memecoin names in the output`
-      :
-      // Original prompt for analyzing multiple casts
-      ` Generate a meme token name and ticker based on this user's posts. 
-        You should take all posts into consideration and create an general idea for yourself on the personality of the person on which you base the token:
-        User's posts: ${combinedContent}
-
-        Please provide a token name and ticker. The name should roast the user slightly, and be fun, catchy, unique, and suitable for a meme token - come up with something completely fresh - the more obscure the better.
-
-        Rules: 
-        - Output only the name and ticker, each on a separate line. Nothing more.
-        - Do not use these words in any part of the output: Degen, crypto, obscure, incoherent, obvious, coherent, quirky, blockchain, wild, blonde, anon, clanker, obscure, pot, base, mfer, mfers, stoner, weed, based, glonk, glonky, bot, simple, roast, dog, invest, buy, purchase, frames, quirky, meme, milo, memecoin, Doge, Pepe, scene, scenecoin, launguage, name, farther, higher, bleu, moxie, warpcast, farcaster.
-        - The name should be a real word
-        - The name can be 1 or 2 words
-        - The name should not have 'token' or 'coin' in it
-        - The ticker should be the same as the name
-        - Use only the english alphabet
-        - Do not use the letters 'Q', 'X', and 'Z' too much
-        - Do not use any existing popular memecoin names in the output`
-
-    const message = await anthropic.messages.create({
-      model: "claude-3-sonnet-20240229",
-      max_tokens: 100,
-      messages: [{
-        role: "user",
-        content: promptContent
-      }]
-    });
-
-    console.log('Claude response:', message);
-    const lines = message.content[0].text.split('\n').filter(line => line.trim());
-   
-    if (lines.length < 2) {
-      throw new Error('Invalid AI response format');
-    }
-
-    return {
-      name: lines[0].trim(),
-      ticker: lines[1].trim()
-    };
-  } catch (error) {
-    console.error('Token generation error:', error); 
-    throw error;
-  }
-}
-
-// Keep the generateSpiritTokenDetails function but comment it out
-/*
-async function generateSpiritTokenDetails(posts) {
-  const combinedContent = posts.map(p => p.text).join(' ');
-
-  try {
-    const message = await anthropic.messages.create({
-      model: "claude-3-sonnet-20240229",
-      max_tokens: 100,
-      messages: [{
-        role: "user",
-        content: `
-        You are an expert who can see into people's souls through their social media posts. 
-        Generate a memecoin crypto token name based on these posts. 
-        You should take all posts into consideration and create an general idea for yourself on the deepest desires or trait of the persons inner spirit on which you base the memecoin:
-        User's posts: ${combinedContent}
-
-        lease provide a memecoin token name and ticker. The name should roast the user slightly, and be fun, catchy, unique, and suitable for a memecoin token - come up with something completely fresh - the more obscure the better.
-
-        Rules: 
-        - Output ONLY the name on first line and ticker on second line. Nothing more.
-        - Do not use these words in any part of the output: Degen, soul, spirit, subtle, poetic, desire, trait, crypto, obscure, incoherent, coherent, quirky, blockchain, wild, blonde, anon, clanker, obscure, pot, base, mfer, mfers, stoner, weed, based, glonk, glonky, bot, simple, roast, dog, invest, buy, purchase, frames, quirky, meme, milo, memecoin, Doge, Pepe, scene, scenecoin, launguage, name, farther, higher, bleu, moxie, warpcast, farcaster.
-        - Use only the english alphabet
-        - Do not use the letters 'Q', 'X', and 'Z' too much
-        - Do not use any existing popular memecoin names in the output
-        - The name should be a real word
-        - The name can be 1 or 2 words
-        - The ticker should be between 3-10 characters
-        - Don't make it obviously spiritual`
-      }]
-    });
-
-    console.log('Claude response:', message);
-    const lines = message.content[0].text.split('\n').filter(line => line.trim());
-   
-    if (lines.length < 2) {
-      throw new Error('Invalid AI response format');
-    }
-
-    return {
-      name: lines[0].trim(),
-      ticker: lines[1].trim()
-    };
-  } catch (error) {
-    console.error('Token generation error:', error); 
-    throw error;
-  }
-}
-*/
-
-async function searchImage(tokenName) {
-  try {
-    const giphyResponse = await axios.get(
-      'https://api.giphy.com/v1/gifs/search',
-      {
-        params: {
-          api_key: process.env.GIPHY_API_KEY,
-          q: tokenName,
-          limit: 3,
-          rating: 'pg-13'
-        }
-      }
-    );
-
-    if (giphyResponse.data.data.length > 0) {
-      const giphyResults = giphyResponse.data.data.filter(gif => {
-        const width = parseInt(gif.images.original.width);
-        const height = parseInt(gif.images.original.height);
-        const aspectRatio = width / height;
-        return width >= 100 &&    // Reduced from 200
-               height >= 100 &&   // Reduced from 200
-               aspectRatio <= 4 &&    // More lenient width ratio (was 3)
-               aspectRatio >= 0.4;    // More lenient height ratio (was 0.67)
-      });
-      
-      if (giphyResults.length > 0) {
-        const randomIndex = Math.floor(Math.random() * giphyResults.length);
-        const fullUrl = giphyResults[randomIndex].images.original.url;
-        const pathSegments = fullUrl.split('/');
-        const gifId = pathSegments[pathSegments.length - 2]; // Get the ID segment before 'giphy.gif'
-        const cleanUrl = `https://i.giphy.com/media/${gifId}/giphy.gif`;
-        return { 
-          success: true, 
-          url: cleanUrl 
-        };
-      }
-    }
-
-    // Second Giphy attempt with first 4 letters
-    const shortQuery = tokenName.slice(0, 4);
-    const secondGiphyResponse = await axios.get(
-      'https://api.giphy.com/v1/gifs/search',
-      {
-        params: {
-          api_key: process.env.GIPHY_API_KEY,
-          q: shortQuery,
-          limit: 2,
-          rating: 'pg-13'
-        }
-      }
-    );
-
-    if (secondGiphyResponse.data.data.length > 0) {
-      const secondGiphyResults = secondGiphyResponse.data.data.filter(gif => {
-        const width = parseInt(gif.images.original.width);
-        const height = parseInt(gif.images.original.height);
-        const aspectRatio = width / height;
-        return width >= 100 &&    // Reduced from 200
-               height >= 100 &&   // Reduced from 200
-               aspectRatio <= 4 &&    // More lenient width ratio (was 3)
-               aspectRatio >= 0.4;    // More lenient height ratio (was 0.67)
-      });
-      
-      if (secondGiphyResults.length > 0) {
-        const randomIndex = Math.floor(Math.random() * secondGiphyResults.length);
-        const fullUrl = secondGiphyResults[randomIndex].images.original.url;
-        const pathSegments = fullUrl.split('/');
-        const gifId = pathSegments[pathSegments.length - 2]; // Get the ID segment before 'giphy.gif'
-        const cleanUrl = `https://i.giphy.com/media/${gifId}/giphy.gif`;
-        return { 
-          success: true, 
-          url: cleanUrl 
-        };
-      }
-    }
-  } catch (giphyError) {
-    console.error('Giphy API error:', giphyError);
-  }
-
-  // Fall back to Imgur if Giphy fails
-  try {
-    const imgurResponse = await axios.get(
-      `https://api.imgur.com/3/gallery/search`,
-      {
-        headers: {
-          'Authorization': `Client-ID ${process.env.IMGUR_CLIENT_ID}`
-        },
-        params: {
-          q: tokenName,
-          sort: 'top'
-        }
-      }
-    );
-
-    if (imgurResponse.data.data.length > 0) {
-      const imgurResults = imgurResponse.data.data.filter(item => 
-        !item.is_album && 
-        item.width >= 200 && 
-        item.height >= 200 &&
-        !item.nsfw &&
-        item.link
-      );
-      
-      if (imgurResults.length > 0) {
-        imgurResults.sort((a, b) => {
-          const aScore = (a.score || 0) + (a.views || 0) / 1000;
-          const bScore = (b.score || 0) + (b.views || 0) / 1000;
-          return bScore - aScore;
-        });
-
-        const topResults = imgurResults.slice(0, 5);
-        const randomIndex = Math.floor(Math.random() * topResults.length);
-        return {
-          success: true,
-          url: topResults[randomIndex].link
-        };
-      }
-    }
-  } catch (imgurError) {
-    console.error('Imgur API error:', imgurError);
-  }
-}
-
-async function findRelevantImage(tokenName) {
-  return await searchImage(tokenName);
-}
 
 async function createCastWithReply(replyToHash, message, imageUrl) {
   try {
@@ -798,26 +529,26 @@ export default async function handler(req, res) {
         console.log('Mentioned profiles:', req.body.data.mentioned_profiles);
         console.log('Author FID:', req.body.data.author.fid);
 
-        if (req.body.data.mentioned_profiles?.some(profile => 
-          profile.fid.toString() === '885622'  // Hard-coded bot FID
-        )) {
+        const isAuthorized = await isAuthorizedCommenter(req.body.data);
+        
+        if (isAuthorized) {
           const authorFid = req.body.data.author.fid;
           const castHash = req.body.data.hash;
           const castText = req.body.data.text;
           const parentHash = req.body.data.parent_hash;
           const mentionedProfiles = req.body.data.mentioned_profiles;
           
-          console.log('Processing mention:', { authorFid, castHash, castText, parentHash });
+          console.log('Processing authorized mention:', { authorFid, castHash, castText, parentHash });
           await handleMention(
             authorFid, 
             castHash, 
             castText, 
             parentHash, 
             mentionedProfiles,
-            req.body.data  // Pass the cast data
+            req.body.data
           ); 
         } else {
-          console.log('Bot not mentioned in this cast');
+          console.log('Unauthorized interaction - ignoring');
         }
       }
 
