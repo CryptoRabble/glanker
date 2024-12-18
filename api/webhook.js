@@ -71,27 +71,13 @@ async function handleMention(fid, replyToHash, castText, parentHash, mentionedPr
         const lpContract = new ethers.Contract(LP_CONTRACT_ADDRESS, LP_ABI, signer);
         const factoryContract = new ethers.Contract(FACTORY_ADDRESS, FACTORY_ABI, provider);
         
-        // Get parent cast (the one your bot replied to)
+        // Get parent cast (glanker's response)
         console.log('Parent cast hash:', parentHash);
 
         const parentCast = await neynar.lookupCastByHashOrWarpcastUrl({
           type: 'hash',
           identifier: parentHash
         });
-
-        console.log('Parent cast details:', {
-          hash: parentCast.cast.hash,
-          text: parentCast.cast.text,
-          author: {
-            username: parentCast.cast.author.username,
-            custody_address: parentCast.cast.author.custody_address
-          },
-          parent_hash: parentCast.cast.parent_hash
-        });
-
-        if (!parentCast || !parentCast.cast) {
-          throw new Error('Could not find parent cast information'); 
-        }
 
         // Get deployment info from factory contract
         const deploymentInfo = await factoryContract.deploymentInfoForToken(tokenAddress);
@@ -100,32 +86,17 @@ async function handleMention(fid, replyToHash, castText, parentHash, mentionedPr
         const positionId = deploymentInfo.positionId;
         console.log('Position ID from factory:', positionId);
 
+        // Get grandparent cast (DiviFlyy's request)
+        const grandparentCast = await neynar.lookupCastByHashOrWarpcastUrl({
+          type: 'hash',
+          identifier: parentCast.cast.parent_hash
+        });
+
         let recipientAddress;
 
-        // Check if parent cast was replying to an image AND bot's message indicates it was an image token
-        if (parentCast.cast.parent_hash && 
-            parentCast.cast.text.includes('dropped a banger image!')) {
-          console.log('Found image token case, parent cast:', {
-            hash: parentCast.cast.hash,
-            text: parentCast.cast.text,
-            parent_hash: parentCast.cast.parent_hash
-          });
-
-          const grandparentCast = await neynar.lookupCastByHashOrWarpcastUrl({
-            type: 'hash',
-            identifier: parentCast.cast.parent_hash
-          });
-
-          console.log('Grandparent cast details:', {
-            hash: grandparentCast.cast.hash,
-            text: grandparentCast.cast.text,
-            author: {
-              username: grandparentCast.cast.author.username,
-              verifications: grandparentCast.cast.author.verifications
-            }
-          });
-
-          // Get grandparent cast (DiviFlyy's request)
+        // Check if glanker's message indicates it was an image token
+        if (parentCast.cast.text.includes('dropped a banger image!')) {
+          // Get great-grandparent cast (original image post)
           const greatGrandparentCast = await neynar.lookupCastByHashOrWarpcastUrl({
             type: 'hash',
             identifier: grandparentCast.cast.parent_hash
