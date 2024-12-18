@@ -78,7 +78,7 @@ async function handleMention(fid, replyToHash, castText, parentHash, mentionedPr
         });
 
         if (!parentCast || !parentCast.cast) {
-          throw new Error('Could not find parent cast information');
+          throw new Error('Could not find parent cast information'); 
         }
 
         // Get deployment info from factory contract
