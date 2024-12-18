@@ -19,17 +19,11 @@ const factoryContract = new ethers.Contract(FACTORY_ADDRESS, FACTORY_ABI, provid
 export async function isAuthorizedCommenter(cast) {
   // Check if the cast author is Clanker
   if (cast.author.fid.toString() === '874542') {
-    // First check the cast text
+    // Extract token address from URL in text or embeds
     const textUrlMatch = cast.text.match(/https:\/\/clanker\.world\/clanker\/(0x[a-fA-F0-9]{40})/);
+    const embedUrlMatch = cast.embeds?.[0]?.url?.match(/https:\/\/clanker\.world\/clanker\/(0x[a-fA-F0-9]{40})/);
     
-    // Then check the embeds
-    const embedUrlMatch = cast.embeds?.find(embed => 
-      embed.url?.match(/https:\/\/clanker\.world\/clanker\/(0x[a-fA-F0-9]{40})/)
-    );
-
-    // Get the token address from either source
-    const tokenAddress = textUrlMatch?.[1] || 
-                        embedUrlMatch?.url.match(/https:\/\/clanker\.world\/clanker\/(0x[a-fA-F0-9]{40})/)?.[1];
+    const tokenAddress = textUrlMatch?.[1] || embedUrlMatch?.[1];
 
     if (tokenAddress) {
       try {
@@ -39,15 +33,18 @@ export async function isAuthorizedCommenter(cast) {
         
         return {
           isAuthorized: true,
-          positionId: deploymentInfo.positionId.toString(),
+          positionId: deploymentInfo?.positionId?.toString(),
           tokenAddress: tokenAddress
         };
       } catch (error) {
         console.error('Error fetching deployment info:', error);
-        return { isAuthorized: true }; // Still return authorized even if contract call fails
+        // If contract call fails, still process the token
+        return { 
+          isAuthorized: true,
+          tokenAddress: tokenAddress
+        };
       }
     }
-    return { isAuthorized: true };
   }
 
   // Check if the bot was directly mentioned

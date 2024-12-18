@@ -125,8 +125,14 @@ async function handleMention(fid, replyToHash, castText, parentHash, mentionedPr
       }
     }
 
+    // If it's Clanker but without position ID/token, still return without responding
+    if (fid.toString() === '874542') {
+      console.log('Message from Clanker without token info - ignoring');
+      return;
+    }
+
     // Continue with normal bot behavior for all other cases
-    console.log('Handling mention from FID:', fid);
+    console.log('Handling mention from non-Clanker FID:', fid);
 
     const isPfpRequest = castText.toLowerCase().includes('my pfp') || 
                         castText.toLowerCase().includes('my profile pic') ||
