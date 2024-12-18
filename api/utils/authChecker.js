@@ -12,7 +12,7 @@ const neynarConfig = new Configuration({
 });
 const neynar = new NeynarAPIClient(neynarConfig);
 
-const FACTORY_ADDRESS = '0x503e881ace7b46f99168964aa7a484d87926bb17';
+const FACTORY_ADDRESS = '0x732560fa1d1A76350b1A500155BA978031B53833';
 const provider = new ethers.JsonRpcProvider(process.env.RPC_URL);
 const factoryContract = new ethers.Contract(FACTORY_ADDRESS, FACTORY_ABI, provider);
 

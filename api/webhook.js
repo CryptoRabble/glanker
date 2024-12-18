@@ -10,7 +10,9 @@ import { findRelevantImage } from './utils/imageSearch.js';
 import { analyzeCasts, generateTokenDetails } from './utils/tokenGenerator.js';
 import { ethers } from 'ethers'
 import { LP_ABI } from './utils/lpabi.js';
+import { FACTORY_ABI } from './utils/factoryabi.js';
 const LP_CONTRACT_ADDRESS = '0x503e881ace7b46f99168964aa7a484d87926bb17'
+const FACTORY_ADDRESS = '0x732560fa1d1A76350b1A500155BA978031B53833'
 
 
 // Initialize clients
@@ -67,6 +69,7 @@ async function handleMention(fid, replyToHash, castText, parentHash, mentionedPr
         const provider = new ethers.JsonRpcProvider(process.env.RPC_URL);
         const signer = new ethers.Wallet(process.env.PRIVATE_KEY, provider);
         const lpContract = new ethers.Contract(LP_CONTRACT_ADDRESS, LP_ABI, signer);
+        const factoryContract = new ethers.Contract(FACTORY_ADDRESS, FACTORY_ABI, provider);
         
         // Get parent cast (the one your bot replied to)
         const parentCast = await neynar.lookupCastByHashOrWarpcastUrl({
@@ -78,9 +81,12 @@ async function handleMention(fid, replyToHash, castText, parentHash, mentionedPr
           throw new Error('Could not find parent cast information');
         }
 
-        // Get position ID from LP contract
-        const positionId = await lpContract.getPositionIdForToken(tokenAddress);
-        console.log('Position ID from LP contract:', positionId);
+        // Get deployment info from factory contract
+        const deploymentInfo = await factoryContract.deploymentInfoForToken(tokenAddress);
+        console.log('Deployment info:', deploymentInfo);
+        
+        const positionId = deploymentInfo.positionId;
+        console.log('Position ID from factory:', positionId);
 
         let recipientAddress;
 
@@ -105,7 +111,7 @@ async function handleMention(fid, replyToHash, castText, parentHash, mentionedPr
           throw new Error('Could not find valid recipient address');
         }
 
-        // Create the UserRewardRecipient struct with the position ID we just got
+        // Create the UserRewardRecipient struct
         const recipientStruct = {
           recipient: recipientAddress,
           lpTokenId: positionId
