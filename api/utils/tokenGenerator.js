@@ -6,7 +6,7 @@ export async function analyzeCasts(fid) {
   const query = `
     query GetLast25CastsByFid {
       FarcasterCasts(
-        input: {blockchain: ALL, filter: {castedBy: {_eq: "fc_fid:${fid}"}}, limit: 25}
+        input: {blockchain: ALL, filter: {castedBy: {_eq: "fc_fid:${fid}"}}, limit: 15}
       ) {
         Cast {
           text
@@ -31,46 +31,29 @@ export async function analyzeCasts(fid) {
   }
 }
 
-export async function generateTokenDetails(posts, isSingleCast = false) {
+export async function generateDescriptionDetails(posts, isSingleCast = false) {
   const combinedContent = posts.map(p => p.text).join(' ');
 
   try {
-    const promptContent = isSingleCast ? 
-      `Generate a meme token name and ticker based specifically on this cast's content:
-      "${combinedContent}"
-      
-      Create a token that directly references or plays off the specific content, theme, or message of this cast.
-      It should be obvious that it relates to the cast, using a stand-out word(s) from the cast when possible.
+    // For single casts, just return the original text
+    if (isSingleCast) {
+      return combinedContent;
+    }
+
+    // For multiple posts, keep existing behavior
+    const promptContent = `Generate a meme description of this user based on their posts. 
+      You should take all posts into consideration and create a description that directly plays off the personality of the user.
+      User's posts: ${combinedContent}
+
+      Please provide a 1-2 sentence description of the user. The description should roast the user slightly, and be fun, catchy, and unique - come up with something completely fresh - the more obscure the better.
 
       Rules: 
-      - Output only the name and ticker, each on a separate line. Nothing more.
-      - The name should cleverly reference the specific content or theme of the cast
-      - Do not use these words in any part of the output: Degen, crypto, stand-out, obscure, obvious, incoherent, coherent, quirky, blockchain, wild, blonde, anon, clanker, obscure, pot, base, mfer, mfers, stoner, weed, based, glonk, glonky, bot, simple, roast, dog, invest, buy, purchase, frames, quirky, meme, milo, memecoin, Doge, Pepe, scene, scenecoin, launguage, name, farther, higher, bleu, moxie, warpcast, farcaster.
-      - The name should be a real word
-      - The name can be 1 or 2 words
-      - The ticker should be the same as the name
-      - The name should not have 'token' or 'coin' in it
-      - Use only the english alphabet
-      - Do not use the letters 'Q', 'X', and 'Z' too much
-      - Do not use any existing popular memecoin names in the output`
-      :
-      // Original prompt for analyzing multiple casts
-      ` Generate a meme token name and ticker based on this user's posts. 
-        You should take all posts into consideration and create an general idea for yourself on the personality of the person on which you base the token:
-        User's posts: ${combinedContent}
-
-        Please provide a token name and ticker. The name should roast the user slightly, and be fun, catchy, unique, and suitable for a meme token - come up with something completely fresh - the more obscure the better.
-
-        Rules: 
-        - Output only the name and ticker, each on a separate line. Nothing more.
-        - Do not use these words in any part of the output: Degen, crypto, obscure, incoherent, obvious, coherent, quirky, blockchain, wild, blonde, anon, clanker, obscure, pot, base, mfer, mfers, stoner, weed, based, glonk, glonky, bot, simple, roast, dog, invest, buy, purchase, frames, quirky, meme, milo, memecoin, Doge, Pepe, scene, scenecoin, launguage, name, farther, higher, bleu, moxie, warpcast, farcaster.
-        - The name should be a real word
-        - The name can be 1 or 2 words
-        - The name should not have 'token' or 'coin' in it
-        - The ticker should be the same as the name
-        - Use only the english alphabet
-        - Do not use the letters 'Q', 'X', and 'Z' too much
-        - Do not use any existing popular memecoin names in the output`
+    - Output only the description. Nothing more.
+    - Do not use these words in any part of the output: Degen, crypto, avatar, vibe, vibes, obscure, incoherent, obvious, coherent, quirky, blockchain, wild, blonde, anon, clanker, obscure, pot, base, mfer, mfers, stoner, weed, based, glonk, glonky, bot, simple, roast, dog, invest, buy, purchase, frames, quirky, meme, milo, memecoin, Doge, Pepe, scene, scenecoin, launguage, name, farther, higher, bleu, moxie, warpcast, farcaster.
+    - Use only the english alphabet
+    - Do not use any existing popular memecoin names in the output
+    - Use simple launguage for the description.
+    - The description should be 1-2 sentences`;
 
     const message = await anthropic.messages.create({
       model: "claude-3-sonnet-20240229",
@@ -81,19 +64,114 @@ export async function generateTokenDetails(posts, isSingleCast = false) {
       }]
     });
 
-    console.log('Claude response:', message);
-    const lines = message.content[0].text.split('\n').filter(line => line.trim());
+    return message.content[0].text.trim();
+  } catch (error) {
+    console.error('Description generation error:', error); 
+    throw error;
+  }
+}
+
+export async function generateSearchDetails(description, isSingleCast = false) {
+  try {
+    const promptContent = `
+      Given this description of a person or situation:
+    "${description}"
+    
+    Provide 2-3 funny, slightly roasting image search terms that match the tone and content of the description.
+    Think of terms that playfully tease the person/situation - like what you'd search to find a reaction gif 
+    that pokes fun at their described traits.
+    
+    Rules:
+    - Terms must directly relate or reference the description's actual content
+    - Output ONLY the search terms
+    - Put each term on its own line with a line break between terms
+    - Terms should be funny/memey but SFW
+    - Do not use these words in any part of the output: Degen, avatar, vibe, vibes, crypto, stand-out, obscure, obvious, incoherent, coherent, quirky, blockchain, wild, blonde, anon, clanker, obscure, pot, base, mfer, mfers, stoner, weed, based, glonk, glonky, bot, simple, roast, dog, invest, buy, purchase, frames, quirky, meme, milo, memecoin, Doge, Pepe, scene, scenecoin, launguage, name, farther, higher, bleu, moxie, warpcast, farcaster.
+    - Each term can be 1 or 2 words
+    - Use only the english alphabet
+    - Do not use the letters 'Q', 'X', and 'Z' too much
+    - Do not use any existing popular memecoin names in the output`;
+
+    const message = await anthropic.messages.create({
+      model: "claude-3-sonnet-20240229",
+      max_tokens: 100,
+      messages: [{
+        role: "user",
+        content: promptContent
+      }]
+    });
+
+    const searchTerms = message.content[0].text
+      .split('\n')
+      .map(line => line.trim())
+      .filter(line => line.length > 0);
    
-    if (lines.length < 2) {
-      throw new Error('Invalid AI response format');
+    console.log('Generated search terms:', searchTerms);
+
+    if (searchTerms.length === 0) {
+      throw new Error('No search terms generated');
     }
 
     return {
-      name: lines[0].trim(),
-      ticker: lines[1].trim()
+      name: searchTerms.join(', '),
+      ticker: ''
+    };
+  } catch (error) {
+    console.error('Search terms generation error:', error); 
+    throw error;
+  }
+}
+
+export async function generateTokenDetails(description, isSingleCast = false) {
+  try {
+    // First, get the search terms from generateSearchDetails
+    const searchTerms = await generateSearchDetails(description, isSingleCast);
+    const searchTermsList = searchTerms.name.split(',').map(term => term.trim());
+
+    const promptContent = `Given these potential terms:
+    "${searchTermsList.join(', ')}"
+    
+    Select the most memeable term from the list above.
+    Output only the chosen term on a single line.`;
+
+    const message = await anthropic.messages.create({
+      model: "claude-3-sonnet-20240229",
+      max_tokens: 100,
+      messages: [{
+        role: "user",
+        content: promptContent
+      }]
+    });
+
+    const name = message.content[0].text.trim();
+    let ticker;
+
+    // Generate ticker based on the rules
+    if (name.includes(' ')) {
+      // If two words, handle based on first word length
+      const [firstWord, secondWord] = name.split(' ');
+      if (firstWord.length > 7) {
+        // For long first words, combine first 4 letters of first word and first 3 of second
+        ticker = (firstWord.slice(0, 4) + secondWord.slice(0, 3)).toUpperCase();
+      } else {
+        // Otherwise, use the first word as before
+        ticker = firstWord.toUpperCase();
+      }
+    } else if (name.length < 7) {
+      // If one word less than 7 letters, use the whole word
+      ticker = name.toUpperCase();
+    } else {
+      // If more than 7 letters, use first six + last letter
+      ticker = (name.slice(0, 6) + name.slice(-1)).toUpperCase();
+    }
+
+    return {
+      name,
+      ticker
     };
   } catch (error) {
     console.error('Token generation error:', error); 
     throw error;
   }
 }
+

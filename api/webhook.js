@@ -7,7 +7,7 @@ import { getRootCast, checkUserScore, isReferringToParentCast } from './utils/ca
 import { analyzeImage } from './utils/imageAnalyzer.js';
 import { isAuthorizedCommenter } from './utils/authChecker.js';
 import { findRelevantImage } from './utils/imageSearch.js';
-import { analyzeCasts, generateTokenDetails } from './utils/tokenGenerator.js';
+import { analyzeCasts, generateTokenDetails, generateDescriptionDetails } from './utils/tokenGenerator.js';
 import { ethers } from 'ethers'
 import { LP_ABI } from './utils/lpabi.js';
 import { FACTORY_ABI } from './utils/factoryabi.js';
@@ -59,11 +59,14 @@ const fallbackImages = [
 ];
 
 async function handleMention(fid, replyToHash, castText, parentHash, mentionedProfiles, castData, tokenAddress) {
+  let message;
+  let outputImage;
+  let tokenDetails = null;
+
   try {
     console.log('Handling mention from FID:', fid);
-    console.log('Token Address:', tokenAddress);
-
-    // If it's from Clanker and has a token address, handle the token transfer
+    
+    // Handle Clanker responses first
     if (fid.toString() === '874542' && tokenAddress) {
       try {
         const provider = new ethers.JsonRpcProvider(process.env.RPC_URL);
@@ -176,13 +179,65 @@ async function handleMention(fid, replyToHash, castText, parentHash, mentionedPr
     
     // Add PFP check early in the function
     if (isPfpRequest) {
+      console.log('Processing profile picture request');
+      const pfpUrl = castData.author.pfp_url;
       const username = castData.author.username;
-      const pfpKey = `${username}:pfp`;
-      const existingPfp = await safeRedisGet(pfpKey);
+      console.log('Found profile picture:', pfpUrl);
       
-      if (existingPfp) {
-        console.log('User already has PFP token:', existingPfp);
+      // Check if this PFP request was already processed
+      const pfpData = await safeRedisGet(`${username}:pfp`);
+      if (pfpData) {
+        console.log('PFP request already processed:', pfpData);
         await createCastWithReply(replyToHash, "Only one pfp token per user fren, need to keep that rarity high.\n\nHit up my gloinked creator DiviFlyy if you need a fresh one!");
+        return;
+      }
+      
+      if (pfpUrl) {
+        try {
+          const imageData = {
+            embeds: [{
+              url: pfpUrl,
+              metadata: {
+                content_type: 'image/jpeg'
+              }
+            }]
+          };
+
+          // Store PFP request in Redis
+          const castUrl = `https://warpcast.com/${username}/${replyToHash}`;
+          await safeRedisSet(`${username}:pfp`, JSON.stringify({
+            castUrl: castUrl,
+            hash: replyToHash,
+            timestamp: Date.now()
+          }));
+          
+          // Generate token from PFP
+          const pfpTokenDetails = await analyzeImage(imageData);
+          
+          if (!pfpTokenDetails) {
+            throw new Error('Failed to analyze profile picture');
+          }
+
+          // Capitalize each word in the name
+          const capitalizedName = pfpTokenDetails.name
+            .toLowerCase()
+            .split(' ')
+            .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+            .join(' ');
+          
+          const pfpMessage = `Woah fren, that's one glankster pfp!\nI'll immortalize it as a token:\n\n@clanker create this token:\nName: ${capitalizedName}\nTicker: ${pfpTokenDetails.ticker.toUpperCase()}`;
+          
+          await createCastWithReply(replyToHash, pfpMessage, pfpUrl);
+          return;
+          
+        } catch (pfpError) {
+          console.error('Error processing PFP request:', pfpError);
+          await safeRedisDel(`${username}:pfp`);
+          await createCastWithReply(replyToHash, "Sorry fren, I had trouble processing your profile picture! Make sure it's less than 5MB and try again.");
+          return;
+        }
+      } else {
+        await createCastWithReply(replyToHash, "Sorry fren, I couldn't find your profile picture!");
         return;
       }
     }
@@ -282,16 +337,34 @@ async function handleMention(fid, replyToHash, castText, parentHash, mentionedPr
 
       if (cachedData) {
         const parsedData = JSON.parse(cachedData);
-        console.log('Time since last generation:', now - parsedData.lastGenerated);
-        if ((now - parsedData.lastGenerated) < 24 * 60 * 60 * 1000) {
-          console.log('Too soon, sending cooldown message');
-          await createCastWithReply(replyToHash, `${userResponse}I can only glank out a fresh banger for you once a day. Radiate some new casts and try again tomorrow!`);
+        const today = new Date().setHours(0, 0, 0, 0);
+        
+        // Initialize or update tokens generated today
+        if (!parsedData.lastDate || parsedData.lastDate < today) {
+          // Reset counter for new day
+          parsedData.tokensToday = 1;
+          parsedData.lastDate = today;
+        } else if (parsedData.tokensToday >= 3) {
+          console.log('Daily limit reached, sending cooldown message');
+          await createCastWithReply(replyToHash, `${userResponse}I can only glank out 3 fresh bangers for you per day. Radiate some new casts and try again tomorrow!`);
           return;
+        } else {
+          // Increment counter for today
+          parsedData.tokensToday++;
         }
+        
+        parsedData.lastGenerated = now;
+        await safeRedisSet(redisKey, JSON.stringify(parsedData));
+      } else {
+        // First token of the day
+        await safeRedisSet(redisKey, JSON.stringify({
+          lastGenerated: now,
+          lastDate: new Date().setHours(0, 0, 0, 0),
+          tokensToday: 1
+        }));
       }
 
       console.log('Proceeding with token generation');
-      await safeRedisSet(redisKey, JSON.stringify({ lastGenerated: now }));
     }
 
     let tokenDetails;
@@ -311,65 +384,6 @@ async function handleMention(fid, replyToHash, castText, parentHash, mentionedPr
     );
     console.log('Has image embed:', hasImageEmbed);
 
-    // If it's a profile picture request, check Redis first
-    if (isPfpRequest) {
-      console.log('Processing profile picture request');
-      const pfpUrl = castData.author.pfp_url;
-      const username = castData.author.username;
-      console.log('Found profile picture:', pfpUrl);
-      
-      if (pfpUrl) {
-        try {
-          hasImageEmbed = true;
-          castData = {
-            embeds: [{
-              url: pfpUrl,
-              metadata: {
-                content_type: 'image/jpeg'
-              }
-            }]
-          };
-
-          // Store PFP request in Redis permanently (no expiration)
-          const castUrl = `https://warpcast.com/${username}/${replyToHash}`;
-          await safeRedisSet(`${username}:pfp`, JSON.stringify({
-            castUrl: castUrl,
-            hash: replyToHash,
-            timestamp: Date.now()
-          }));
-          
-          // Try to generate token from PFP
-          const imageData = {
-            embeds: [{
-              url: pfpUrl,
-              metadata: {
-                content_type: 'image/jpeg'
-              }
-            }]
-          };
-          
-          const imageTokenDetails = await analyzeImage(imageData);
-          if (!imageTokenDetails) {
-            throw new Error('Failed to analyze profile picture');
-          }
-          
-          tokenDetails = imageTokenDetails;
-          message = `That is one glanked out pfp fren.\nHere's a token based on it:\n\nName: ${tokenDetails.name}\nTicker: ${tokenDetails.ticker.toUpperCase()}`;
-          outputImage = pfpUrl;
-          
-        } catch (pfpError) {
-          console.error('Error processing PFP request:', pfpError);
-          await safeRedisDel(`${username}:pfp`);
-          await createCastWithReply(replyToHash, "Sorry fren, I had trouble processing your profile picture! Make sure it's less than 5MB and try again.");
-          return;
-        }
-      } else {
-        await safeRedisDel(`${username}:pfp`);
-        await createCastWithReply(replyToHash, "Sorry fren, I couldn't find your profile picture!");
-        return;
-      }
-    }
-
     // If asking about image but no image in current cast, check parent
     if (isAskingAboutImage && !hasImageEmbed && parentHash) {
       console.log('User mentioned image but none found, checking parent cast');
@@ -387,7 +401,6 @@ async function handleMention(fid, replyToHash, castText, parentHash, mentionedPr
 
     if (hasImageEmbed) {
       console.log('Found image embed in cast');
-      // Get image embed URL
       const imageEmbed = castData.embeds.find(embed => 
         embed.metadata?.content_type?.startsWith('image/') ||
         (embed.url && (
@@ -402,50 +415,83 @@ async function handleMention(fid, replyToHash, castText, parentHash, mentionedPr
 
       console.log('Processing image:', outputImage);
       
-      // Try to generate token from image
       const imageData = {
         embeds: [{
           url: outputImage,
           metadata: {
-            content_type: 'image/jpeg'  // Default to jpeg for pending metadata
+            content_type: 'image/jpeg'
           }
         }]
       };
       console.log('Sending to analyzeImage:', imageData);
       
-      const imageTokenDetails = await analyzeImage(imageData);
-      console.log('Image analysis result:', imageTokenDetails);
+      tokenDetails = await analyzeImage(imageData);
+      console.log('Image analysis result:', tokenDetails);
       
-      if (imageTokenDetails) {
-        tokenDetails = imageTokenDetails;
+      if (tokenDetails) {
+        const capitalizedName = tokenDetails.name
+          .split(' ')
+          .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+          .join(' ');
+        tokenDetails.name = capitalizedName;
+
         message = isPfpRequest 
-          ? `Woah fren, that's one glankster pfp!\nI'll immortalize it as a clanker token:\n\n@clanker create this token:\nName: ${tokenDetails.name}\nTicker: ${tokenDetails.ticker.toUpperCase()}`
+          ? `Woah fren, that's one glankster pfp!\nI'll immortalize it as a token:\n\n@clanker create this token:\nName: ${capitalizedName}\nTicker: ${tokenDetails.ticker.toUpperCase()}`
           : castData.author.fid === fid
-            ? `That is one glonkerized image fren.\nHere's a token based on it:\n\n@clanker create this token:\nName: ${tokenDetails.name}\nTicker: ${tokenDetails.ticker.toUpperCase()}`
-            : `Woah @${castData.author.username} dropped a banger image!\nHere's a token based on it:\n\n@clanker create this token:\nName: ${tokenDetails.name}\nTicker: ${tokenDetails.ticker.toUpperCase()}`;
+            ? `That is one glonkerized image fren.\nHere's a token based on it:\n\n@clanker create this token:\nName: ${capitalizedName}\nTicker: ${tokenDetails.ticker.toUpperCase()}`
+            : `Woah @${castData.author.username} dropped a banger image!\nHere's a token based on it:\n\n@clanker create this token:\nName: ${capitalizedName}\nTicker: ${tokenDetails.ticker.toUpperCase()}`;
       } else {
         // Fallback to text-based generation if image analysis fails
         let analysis;
         if (parentHash) {
-          analysis = await getRootCast(parentHash);
-          if (!analysis) {
-            analysis = await analyzeCasts(targetFid);
+          if (isReferringToParentCast(castText)) {
+            console.log('User is referring to parent cast, analyzing only parent');
+            analysis = await getRootCast(parentHash);
+            if (!analysis) {
+              console.log('Failed to get parent cast, falling back to user analysis');
+              analysis = await analyzeCasts(targetFid);
+            }
+          } else {
+            analysis = await getRootCast(parentHash);
+            if (!analysis) {
+              analysis = await analyzeCasts(targetFid);
+            }
           }
         } else {
           analysis = await analyzeCasts(targetFid);
         }
-        tokenDetails = await generateTokenDetails(analysis);
-        const imageResult = await findRelevantImage(tokenDetails.name);
+
+        // Generate description first
+        const description = await generateDescriptionDetails(analysis, isReferringToParentCast(castText));
+        console.log('Generated description:', description);
+
+        // Use description to generate token details
+        tokenDetails = await generateTokenDetails(description);
+        console.log('Generated token details:', tokenDetails);
+
+        // Capitalize the name before using it
+        const capitalizedName = tokenDetails.name
+          .split(' ')
+          .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+          .join(' ');
+        tokenDetails.name = capitalizedName;
+
+        const imageResult = await findRelevantImage(tokenDetails.name, description);
         outputImage = imageResult?.url || fallbackImages[Math.floor(Math.random() * fallbackImages.length)];
+
+        // Keep original message format
         message = targetUsername
-          ? `Ah, you want me to peep on other people's profiles?\nAlright fren, here's a token based on @${targetUsername}'s vibe:\n\n@clanker create this token:\nName: ${tokenDetails.name}\nTicker: ${tokenDetails.ticker.toUpperCase()}`
-          : `${userResponse}I scrolled through your casts... they're pretty glonky.\nHere's a token based on your vibe:\n\n@clanker create this token:\nName: ${tokenDetails.name}\nTicker: ${tokenDetails.ticker.toUpperCase()}`;
+          ? `Ah, you want me to peep on other people's profiles?\nAlright fren, here's a token based on @${targetUsername}'s vibe:\n\n@clanker create this token:\nName: ${capitalizedName}\nTicker: ${tokenDetails.ticker.toUpperCase()}`
+          : isReferringToParentCast(castText)
+            ? `This cast is maximum gloinked fren.\nHere's a token based on it:\n\n@clanker create this token:\nName: ${capitalizedName}\nTicker: ${tokenDetails.ticker.toUpperCase()}`
+            : mentionText 
+              ? `${userResponse}I scrolled through your casts... they're pretty glonky.\nHere's a token based on your vibe:\n\n@clanker create this token:\nName: ${capitalizedName}\nTicker: ${tokenDetails.ticker.toUpperCase()}`
+              : `Here's a token based on your vibe:\n\n@clanker create this token:\nName: ${capitalizedName}\nTicker: ${tokenDetails.ticker.toUpperCase()}`;
       }
     } else {
       // No image, use text-based generation
       let analysis;
       if (parentHash) {
-        // Add new condition for referring to parent cast
         if (isReferringToParentCast(castText)) {
           console.log('User is referring to parent cast, analyzing only parent');
           analysis = await getRootCast(parentHash);
@@ -453,40 +499,46 @@ async function handleMention(fid, replyToHash, castText, parentHash, mentionedPr
             console.log('Failed to get parent cast, falling back to user analysis');
             analysis = await analyzeCasts(targetFid);
           }
-          tokenDetails = await generateTokenDetails(analysis, true);
         } else {
-          // Existing logic
           analysis = await getRootCast(parentHash);
           if (!analysis) {
             analysis = await analyzeCasts(targetFid);
           }
-          tokenDetails = await generateTokenDetails(analysis, false);
         }
       } else {
         analysis = await analyzeCasts(targetFid);
-        tokenDetails = await generateTokenDetails(analysis, false);
       }
       
-      const imageResult = await findRelevantImage(tokenDetails.name);
+      // Generate description first
+      const description = await generateDescriptionDetails(analysis, isReferringToParentCast(castText));
+      console.log('Generated description:', description);
+
+      // Use description to generate token details
+      tokenDetails = await generateTokenDetails(description);
+      console.log('Generated token details:', tokenDetails);
+
+      // Capitalize the name before using it
+      const capitalizedName = tokenDetails.name
+        .split(' ')
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(' ');
+      tokenDetails.name = capitalizedName;
+
+      const imageResult = await findRelevantImage(tokenDetails.name, description);
       outputImage = imageResult?.url || fallbackImages[Math.floor(Math.random() * fallbackImages.length)];
       
-      // Modify message based on whether we're analyzing parent cast
+      // Modify message to include the description
       message = targetUsername
-        ? `Ah, you want me to peep on other people's profiles?\nAlright fren, here's a token based on @${targetUsername}'s vibe:\n\n@clanker create this token:\nName: ${tokenDetails.name}\nTicker: ${tokenDetails.ticker.toUpperCase()}`
+        ? `Ah, you want me to peep on other people's profiles?\nAlright fren, here's a token based on @${targetUsername}'s vibe:\n\n@clanker create this token:\nName: ${capitalizedName}\nTicker: ${tokenDetails.ticker.toUpperCase()}`
         : isReferringToParentCast(castText)
-          ? `This cast is maximum gloinked fren.\nHere's a token based on it:\n\n@clanker create this token:\nName: ${tokenDetails.name}\nTicker: ${tokenDetails.ticker.toUpperCase()}`
-          : `${userResponse}I scrolled through your casts... they're pretty glonky.\nHere's a token based on your vibe:\n\n@clanker create this token:\nName: ${tokenDetails.name}\nTicker: ${tokenDetails.ticker.toUpperCase()}`;
+          ? `This cast is maximum gloinked fren.\nHere's a token based on it:\n\n@clanker create this token:\nName: ${capitalizedName}\nTicker: ${tokenDetails.ticker.toUpperCase()}`
+          : `${userResponse}I scrolled through your casts... they're pretty glonky.\nHere's a token based on your vibe:\n\n@clanker create this token:\nName: ${capitalizedName}\nTicker: ${tokenDetails.ticker.toUpperCase()}`;
     }
 
-    await createCastWithReply(replyToHash, message, outputImage);
+    return await createCastWithReply(replyToHash, message, outputImage);
   } catch (error) {
     console.error('Error in handleMention:', error);
-    // Attempt to notify the user of the error
-    try {
-      await createCastWithReply(replyToHash, "Sorry fren, something went wrong while processing your request!");
-    } catch (replyError) {
-      console.error('Error sending error message:', replyError);
-    }
+    await createCastWithReply(replyToHash, "Sorry fren, something went wrong while processing your request!");
   }
 }
 
@@ -540,6 +592,8 @@ export default async function handler(req, res) {
   console.log('Request received:', req.method);
   console.log('Headers:', req.headers);
   console.log('Body:', req.body);
+  console.log('Mentioned profiles:', req.body.data?.mentioned_profiles);
+  console.log('Cast text:', req.body.data?.text);
 
   if (req.method === 'GET') {
     return res.status(200).json({ status: 'Bot is running' });
@@ -561,12 +615,29 @@ export default async function handler(req, res) {
       return res.status(401).json({ error: 'Invalid signature' });
     }
 
+    // Move idempotency check here, after signature verification
+    const castHash = req.body.data?.hash;
+    if (castHash) {
+      const castKey = `processed_cast:${castHash}`;
+      const isProcessed = await safeRedisGet(castKey);
+      
+      if (isProcessed) {
+        console.log('Cast already processed:', castHash);
+        return res.status(200).json({ status: 'Already processed' });
+      }
+
+      // Set processed flag immediately after verifying it's not processed
+      await safeRedisSet(castKey, '1', 3600); // Keep for 1 hour
+    }
+
     try {
       if (req.body.type === 'cast.created') {
+        console.log('Cast created event received');
         console.log('Mentioned profiles:', req.body.data.mentioned_profiles);
         console.log('Author FID:', req.body.data.author.fid);
 
         const isAuthorized = await isAuthorizedCommenter(req.body.data);
+        console.log('Authorization result:', isAuthorized);
         
         if (isAuthorized.isAuthorized) {
           const authorFid = req.body.data.author.fid;
@@ -586,7 +657,7 @@ export default async function handler(req, res) {
             isAuthorized.tokenAddress
           ); 
         } else {
-          console.log('Unauthorized interaction - ignoring');
+          console.log('Unauthorized interaction - ignoring. Reason:', isAuthorized);
           return res.status(200).json({ status: 'Unauthorized interaction ignored' });
         }
       }
