@@ -426,7 +426,7 @@ async function handleMention(fid, replyToHash, castText, parentHash, mentionedPr
       console.log('Sending to analyzeImage:', imageData);
       
       tokenDetails = await analyzeImage(imageData);
-      console.log('Image analysis result:', tokenDetails);
+      console.log('Image analysis result:', tokenDetails); 
       
       if (tokenDetails) {
         const capitalizedName = tokenDetails.name
