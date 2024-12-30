@@ -49,7 +49,7 @@ export async function generateDescriptionDetails(posts, isSingleCast = false) {
 
       Rules: 
     - Output only the description. Nothing more.
-    - Do not use these words in any part of the output: Degen, crypto, avatar, vibe, vibes, obscure, incoherent, obvious, coherent, quirky, blockchain, wild, blonde, anon, clanker, obscure, pot, base, mfer, mfers, stoner, weed, based, glonk, glonky, bot, simple, roast, dog, invest, buy, purchase, frames, quirky, meme, milo, memecoin, Doge, Pepe, scene, scenecoin, launguage, name, farther, higher, bleu, moxie, warpcast, farcaster.
+    - Do not use these words in any part of the output: Degen, crypto, avatar, vibe, vibes, quirky, blockchain, wild, blonde, anon, clanker, obscure, pot, base, mfer, mfers, stoner, weed, based, glonk, glonky, bot, simple, roast, dog, invest, buy, purchase, frames, quirky, meme, milo, memecoin, Doge, Pepe, scene, scenecoin, launguage, name, farther, higher, bleu, moxie, warpcast, farcaster.
     - Use only the english alphabet
     - Do not use any existing popular memecoin names in the output
     - The description should be 1-2 sentences`;
@@ -85,7 +85,7 @@ export async function generateSearchDetails(description, isSingleCast = false) {
     - Output ONLY the search terms
     - Put each term on its own line with a line break between terms
     - Terms should be funny/memey but SFW
-    - Do not use these words in any part of the output: Degen, avatar, vibe, vibes, crypto, stand-out, obscure, obvious, incoherent, coherent, quirky, blockchain, wild, blonde, anon, clanker, obscure, pot, base, mfer, mfers, stoner, weed, based, glonk, glonky, bot, simple, roast, dog, invest, buy, purchase, frames, quirky, meme, milo, memecoin, Doge, Pepe, scene, scenecoin, launguage, name, farther, higher, bleu, moxie, warpcast, farcaster.
+    - Do not use these words in any part of the output: Degen, avatar, vibe, vibes, crypto, stand-out, quirky, blockchain, wild, blonde, anon, clanker, obscure, pot, base, mfer, mfers, stoner, weed, based, glonk, glonky, bot, simple, roast, dog, invest, buy, purchase, frames, quirky, meme, milo, memecoin, Doge, Pepe, scene, scenecoin, launguage, name, farther, higher, bleu, moxie, warpcast, farcaster.
     - Each term can be 1 or 2 words
     - Use only the english alphabet
     - Do not use the letters 'Q', 'X', and 'Z' too much
