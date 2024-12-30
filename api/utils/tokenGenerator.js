@@ -41,18 +41,17 @@ export async function generateDescriptionDetails(posts, isSingleCast = false) {
     }
 
     // For multiple posts, keep existing behavior
-    const promptContent = `Generate a meme description of this user based on their posts. 
+    const promptContent = `Generate a description of this user based on their posts. 
       You should take all posts into consideration and create a description that directly plays off the personality of the user.
       User's posts: ${combinedContent}
 
-      Please provide a 1-2 sentence description of the user. The description should roast the user slightly, and be fun, catchy, and unique - come up with something completely fresh - the more obscure the better.
+      The description should roast the user slightly, and be fun, catchy, and unique - come up with something completely fresh - the more obscure the better.
 
       Rules: 
     - Output only the description. Nothing more.
     - Do not use these words in any part of the output: Degen, crypto, avatar, vibe, vibes, obscure, incoherent, obvious, coherent, quirky, blockchain, wild, blonde, anon, clanker, obscure, pot, base, mfer, mfers, stoner, weed, based, glonk, glonky, bot, simple, roast, dog, invest, buy, purchase, frames, quirky, meme, milo, memecoin, Doge, Pepe, scene, scenecoin, launguage, name, farther, higher, bleu, moxie, warpcast, farcaster.
     - Use only the english alphabet
     - Do not use any existing popular memecoin names in the output
-    - Use simple launguage for the description.
     - The description should be 1-2 sentences`;
 
     const message = await anthropic.messages.create({
