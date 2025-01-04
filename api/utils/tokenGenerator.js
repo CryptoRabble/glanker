@@ -77,13 +77,13 @@ export async function generateSearchDetails(description, isSingleCast = false) {
     "${description}"
     
     Provide 2-3 funny, slightly roasting image search terms that match the tone and content of the description.
-    Think of terms that playfully tease the person/situation - like what you'd search to find a reaction gif 
-    that pokes fun at their described traits.
+    Think of terms that playfully reference the person/situation - like what you'd search to find a reaction gif 
+    that pokes fun at the described traits.
     
     Rules:
     - Terms must directly relate or reference the description's actual content
-    - Output ONLY the search terms
     - Put each term on its own line with a line break between terms
+    - Output ONLY the search terms
     - Terms should be funny/memey but SFW
     - Do not use these words in any part of the output: Degen, avatar, vibe, vibes, crypto, stand-out, quirky, blockchain, wild, blonde, anon, clanker, obscure, pot, base, mfer, mfers, stoner, weed, based, glonk, glonky, bot, simple, roast, dog, invest, buy, purchase, frames, quirky, meme, milo, memecoin, Doge, Pepe, scene, scenecoin, launguage, name, farther, higher, bleu, moxie, warpcast, farcaster.
     - Each term can be 1 or 2 words
@@ -131,7 +131,7 @@ export async function generateTokenDetails(description, isSingleCast = false) {
     "${searchTermsList.join(', ')}"
     
     Select the most memeable term from the list above.
-    Output only the chosen term on a single line.`;
+    Output only the chosen term on a single line, nothing more`;
 
     const message = await anthropic.messages.create({
       model: "claude-3-sonnet-20240229",

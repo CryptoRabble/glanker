@@ -101,7 +101,7 @@ async function generateImageTokenDetails(description, searchTerms) {
         "${searchTerms.join(', ')}"
         
         Select the most memeable term from the list above.
-        Output only the chosen term on a single line.`;
+        Output only the chosen term on a single line, nothing more`;
 
         const message = await anthropic.messages.create({
             model: "claude-3-sonnet-20240229",
