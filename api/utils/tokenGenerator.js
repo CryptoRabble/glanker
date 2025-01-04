@@ -148,21 +148,22 @@ export async function generateTokenDetails(description, isSingleCast = false) {
 
     // Generate ticker based on the rules
     if (name.includes(' ')) {
-      // If two words, handle based on first word length
       const [firstWord, secondWord] = name.split(' ');
-      if (firstWord.length > 7) {
-        // For long first words, combine first 4 letters of first word and first 3 of second
-        ticker = (firstWord.slice(0, 4) + secondWord.slice(0, 3)).toUpperCase();
+      const combinedLength = firstWord.length + secondWord.length;
+      
+      if (combinedLength < 12) {
+        // If combined words are less than 12 letters, combine them
+        ticker = (firstWord + secondWord).toUpperCase();
       } else {
-        // Otherwise, use the first word as before
-        ticker = firstWord.toUpperCase();
+        // For longer combinations, use first 4 of first word + first 3 of second
+        ticker = (firstWord.slice(0, 4) + secondWord.slice(0, 3)).toUpperCase();
       }
-    } else if (name.length < 7) {
-      // If one word less than 7 letters, use the whole word
+    } else if (name.length < 15) {
+      // If one word less than 15 letters, use the whole word
       ticker = name.toUpperCase();
     } else {
-      // If more than 7 letters, use first six + last letter
-      ticker = (name.slice(0, 6) + name.slice(-1)).toUpperCase();
+      // If more than 15 letters, use first ten + last letter
+      ticker = (name.slice(0, 10) + name.slice(-1)).toUpperCase();
     }
 
     return {
