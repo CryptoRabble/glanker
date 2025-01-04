@@ -131,7 +131,8 @@ export async function generateTokenDetails(description, isSingleCast = false) {
     "${searchTermsList.join(', ')}"
     
     Select the most memeable term from the list above.
-    Output only the chosen term on a single line, nothing more`;
+    Output only the chosen term on a single line, nothing more
+    Output only the term, no other text or symbols`;
 
     const message = await anthropic.messages.create({
       model: "claude-3-sonnet-20240229",
