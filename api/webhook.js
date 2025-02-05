@@ -12,7 +12,7 @@ import { ethers } from 'ethers'
 import { LP_ABI } from './utils/lpabi.js';
 import { FACTORY_ABI } from './utils/factoryabi.js';
 const LP_CONTRACT_ADDRESS = '0x618A9840691334eE8d24445a4AdA4284Bf42417D'
-const FACTORY_ADDRESS = '0x732560fa1d1A76350b1A500155BA978031B53833'
+const FACTORY_ADDRESS = '0x375C15db32D28cEcdcAB5C03Ab889bf15cbD2c5E'
 
 
 // Initialize clients
