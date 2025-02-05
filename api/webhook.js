@@ -86,8 +86,33 @@ async function handleMention(fid, replyToHash, castText, parentHash, mentionedPr
         const deploymentInfo = await factoryContract.deploymentInfoForToken(tokenAddress);
         console.log('Deployment info:', deploymentInfo);
         
-        const positionId = deploymentInfo.positionId;
+        // Correctly access the positionId from the struct
+        // deploymentInfo returns { token, positionId, locker }
+        const positionId = deploymentInfo[1]; // or deploymentInfo.positionId if using named properties
         console.log('Position ID from factory:', positionId);
+
+        // Verify the deployment info
+        if (deploymentInfo[0] !== tokenAddress) {
+          console.error('Token address mismatch:', {
+            expected: tokenAddress,
+            received: deploymentInfo[0]
+          });
+          throw new Error('Token address mismatch');
+        }
+
+        // Verify the locker address matches
+        if (deploymentInfo[2].toLowerCase() !== LP_CONTRACT_ADDRESS.toLowerCase()) {
+          console.error('Locker address mismatch:', {
+            expected: LP_CONTRACT_ADDRESS,
+            received: deploymentInfo[2]
+          });
+          throw new Error('Locker address mismatch');
+        }
+
+        // Add validation check for position ID
+        if (!positionId || positionId.toString() === '0') {
+          throw new Error('Invalid position ID returned from factory');
+        }
 
         // Get grandparent cast (DiviFlyy's request)
         const grandparentCast = await neynar.lookupCastByHashOrWarpcastUrl({
@@ -144,18 +169,37 @@ async function handleMention(fid, replyToHash, castText, parentHash, mentionedPr
 
         console.log('Transferring ownership with struct:', recipientStruct);
 
-        // Call replaceUserRewardRecipient
-        const tx = await lpContract.replaceUserRewardRecipient(recipientStruct);
-        console.log('Transaction sent:', tx.hash);
-
-        // Wait for transaction to be mined
-        const receipt = await tx.wait();
-        console.log('Transaction confirmed:', receipt);
+        // First check if we can estimate the gas (this will catch most errors)
+        try {
+          const gasEstimate = await lpContract.replaceUserRewardRecipient.estimateGas(recipientStruct);
+          console.log('Gas estimate:', gasEstimate.toString());
+          
+          // If gas estimation succeeds, send the transaction with a higher gas limit
+          const tx = await lpContract.replaceUserRewardRecipient(recipientStruct, {
+            gasLimit: Math.floor(gasEstimate * 1.2) // Add 20% buffer
+          });
+          
+          console.log('Transaction sent:', tx.hash);
+          const receipt = await tx.wait();
+          console.log('Transaction confirmed:', receipt);
+        } catch (error) {
+          // Parse the error to provide more specific feedback
+          if (error.data?.includes('0x815e1d64')) { // InvalidTokenId error signature
+            console.error('Invalid token ID error:', positionId);
+            throw new Error(`Invalid token ID: ${positionId}`);
+          } else if (error.data?.includes('0x4ca88867')) { // NotAllowed error signature
+            console.error('Not allowed error for address:', signerAddress);
+            throw new Error(`Address ${signerAddress} not allowed to transfer token`);
+          } else {
+            console.error('Transaction error:', error);
+            throw error;
+          }
+        }
 
         return;
       } catch (error) {
         console.error('Error handling LP token transfer:', error);
-        return;
+        throw error;
       }
     }
 
