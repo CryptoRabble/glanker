@@ -11,7 +11,7 @@ import { analyzeCasts, generateTokenDetails, generateDescriptionDetails } from '
 import { ethers } from 'ethers'
 import { LP_ABI } from './utils/lpabi.js';
 import { FACTORY_ABI } from './utils/factoryabi.js';
-const LP_CONTRACT_ADDRESS = '0x618A9840691334eE8d24445a4AdA4284Bf42417D'
+const LP_CONTRACT_ADDRESS = '0x5eC4f99F342038c67a312a166Ff56e6D70383D86'
 const FACTORY_ADDRESS = '0x375C15db32D28cEcdcAB5C03Ab889bf15cbD2c5E'
 
 
