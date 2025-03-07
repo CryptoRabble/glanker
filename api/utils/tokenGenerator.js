@@ -2,32 +2,33 @@ import { fetchQuery } from "@airstack/node";
 import { anthropic } from '../webhook.js';  // Import anthropic from webhook.js
 
 export async function analyzeCasts(fid) {
-  console.log('Analyzing casts for FID:', fid);
-  const query = `
-    query GetLast25CastsByFid {
-      FarcasterCasts(
-        input: {blockchain: ALL, filter: {castedBy: {_eq: "fc_fid:${fid}"}}, limit: 15}
-      ) {
-        Cast {
-          text
-          castedAtTimestamp
-          url
-          fid
-        }
-      }
-    }
-  `;
-
   try {
-    const { data, error } = await fetchQuery(query);
-    if (error) {
-      throw new Error(error.message);
+    const url = `https://api.neynar.com/v2/farcaster/feed/user/casts?fid=${fid}&limit=15&include_replies=false`;
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'accept': 'application/json',
+        'x-api-key': process.env.NEYNAR_API_KEY
+      }
+    });
+
+    if (!response.ok) {
+      console.error('Neynar API error:', response.status);
+      return [];
     }
-    console.log('Retrieved casts:', data.FarcasterCasts.Cast);
-    return data.FarcasterCasts.Cast;
+
+    const data = await response.json();
+    
+    return data.casts.map(cast => ({
+      text: cast.text,
+      timestamp: new Date(cast.timestamp).getTime(),
+      url: cast.parent_url || '',
+      fid: cast.author.fid
+    }));
+
   } catch (error) {
-    console.error('Airstack query error:', error);
-    throw error;
+    console.error('Error analyzing casts:', error);
+    return [];
   }
 }
 
