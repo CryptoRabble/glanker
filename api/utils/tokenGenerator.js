@@ -58,12 +58,23 @@ export async function analyzeCasts(fid) {
 }
 
 export async function generateDescriptionDetails(posts, isSingleCast = false) {
-  console.log('Starting generateDescriptionDetails with posts:', posts);
-  const combinedContent = posts.map(p => p.text).join(' ');
-  console.log('Combined content:', combinedContent);
-
+  console.log('Starting generateDescriptionDetails with authorFid:', posts[0]?.fid);
+  
   try {
-    // For single casts, just return the original text
+    // Get the user's previous casts
+    const userCasts = await analyzeCasts(posts[0]?.fid);
+    console.log('Retrieved user casts:', userCasts);
+
+    // Combine current posts with historical casts
+    const allPosts = [...posts, ...userCasts];
+    
+    // Filter out bot's own posts
+    const userPosts = allPosts.filter(p => p.username !== 'glanker');
+    console.log('Filtered user posts:', userPosts);
+    
+    const combinedContent = userPosts.map(p => p.text).join(' ');
+    console.log('Combined content:', combinedContent);
+
     if (isSingleCast) {
       return combinedContent;
     }
