@@ -58,7 +58,9 @@ export async function analyzeCasts(fid) {
 }
 
 export async function generateDescriptionDetails(posts, isSingleCast = false) {
+  console.log('Starting generateDescriptionDetails with posts:', posts);
   const combinedContent = posts.map(p => p.text).join(' ');
+  console.log('Combined content:', combinedContent);
 
   try {
     // For single casts, just return the original text
