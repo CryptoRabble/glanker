@@ -20,7 +20,7 @@ export async function analyzeCasts(fid) {
       method: 'GET',
       headers: {
         'accept': 'application/json',
-        'api-key': process.env.NEYNAR_API_KEY // Note: changed from x-api-key to api-key
+        'api_key': process.env.NEYNAR_API_KEY  // Changed from api-key to api_key
       }
     });
 
