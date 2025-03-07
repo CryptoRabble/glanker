@@ -2,26 +2,44 @@ import { anthropic } from '../webhook.js';  // Import anthropic from webhook.js
 
 export async function analyzeCasts(fid) {
   console.log('Starting cast analysis for FID:', fid);
+  if (!fid) {
+    console.error('No FID provided to analyzeCasts');
+    return [];
+  }
+
   try {
     const url = `https://api.neynar.com/v2/farcaster/feed/user/casts?fid=${fid}&limit=15&include_replies=false`;
     console.log('Fetching casts from URL:', url);
     
+    if (!process.env.NEYNAR_API_KEY) {
+      console.error('NEYNAR_API_KEY not found in environment');
+      return [];
+    }
+
     const response = await fetch(url, {
       method: 'GET',
       headers: {
         'accept': 'application/json',
-        'x-api-key': process.env.NEYNAR_API_KEY
+        'api-key': process.env.NEYNAR_API_KEY // Note: changed from x-api-key to api-key
       }
     });
 
+    console.log('Neynar API response status:', response.status);
+
     if (!response.ok) {
-      console.error('Neynar API error:', response.status);
+      console.error('Neynar API error:', response.status, await response.text());
       return [];
     }
 
     const data = await response.json();
+    console.log('Retrieved raw data:', JSON.stringify(data).substring(0, 200) + '...');
     console.log('Retrieved casts count:', data.casts?.length || 0);
     
+    if (!data.casts || !Array.isArray(data.casts)) {
+      console.error('Invalid response format:', data);
+      return [];
+    }
+
     const processedCasts = data.casts.map(cast => ({
       text: cast.text,
       timestamp: new Date(cast.timestamp).getTime(),
@@ -34,6 +52,7 @@ export async function analyzeCasts(fid) {
 
   } catch (error) {
     console.error('Error analyzing casts:', error);
+    console.error('Error stack:', error.stack);
     return [];
   }
 }
