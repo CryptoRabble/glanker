@@ -1,9 +1,11 @@
-import { fetchQuery } from "@airstack/node";
 import { anthropic } from '../webhook.js';  // Import anthropic from webhook.js
 
 export async function analyzeCasts(fid) {
+  console.log('Starting cast analysis for FID:', fid);
   try {
     const url = `https://api.neynar.com/v2/farcaster/feed/user/casts?fid=${fid}&limit=15&include_replies=false`;
+    console.log('Fetching casts from URL:', url);
+    
     const response = await fetch(url, {
       method: 'GET',
       headers: {
@@ -18,13 +20,17 @@ export async function analyzeCasts(fid) {
     }
 
     const data = await response.json();
+    console.log('Retrieved casts count:', data.casts?.length || 0);
     
-    return data.casts.map(cast => ({
+    const processedCasts = data.casts.map(cast => ({
       text: cast.text,
       timestamp: new Date(cast.timestamp).getTime(),
       url: cast.parent_url || '',
       fid: cast.author.fid
     }));
+
+    console.log('Processed casts:', processedCasts);
+    return processedCasts;
 
   } catch (error) {
     console.error('Error analyzing casts:', error);
