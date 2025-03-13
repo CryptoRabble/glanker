@@ -479,6 +479,25 @@ async function handleMention(fid, replyToHash, castText, parentHash, mentionedPr
         const imageResult = await findRelevantImage(tokenDetails.name, description);
         outputImage = imageResult?.url || fallbackImages[Math.floor(Math.random() * fallbackImages.length)];
 
+        // Now analyze the generated image to get final token details
+        if (outputImage) {
+          const imageData = {
+            embeds: [{
+              url: outputImage,
+              metadata: {
+                content_type: 'image/jpeg'
+              }
+            }]
+          };
+          
+          const imageTokenDetails = await analyzeImage(imageData);
+          if (imageTokenDetails) {
+            // Use the image-based token details instead
+            tokenDetails = imageTokenDetails;
+            console.log('Updated token details from image analysis:', tokenDetails);
+          }
+        }
+
         // Keep original message format
         message = targetUsername
           ? `Ah, you want me to peep on other people's profiles?\nAlright fren, here's a token based on @${targetUsername}'s vibe:\n\n@clanker create this token:\nName: ${capitalizedName}\nTicker: ${tokenDetails.ticker.toUpperCase()}`
@@ -513,9 +532,32 @@ async function handleMention(fid, replyToHash, castText, parentHash, mentionedPr
       const description = await generateDescriptionDetails(analysis, isReferringToParentCast(castText));
       console.log('Generated description:', description);
 
-      // Use description to generate token details
-      tokenDetails = await generateTokenDetails(description);
-      console.log('Generated token details:', tokenDetails);
+      // Use description to generate initial token details
+      let tokenDetails = await generateTokenDetails(description);
+      console.log('Generated initial token details:', tokenDetails);
+
+      // Find relevant image
+      const imageResult = await findRelevantImage(tokenDetails.name, description);
+      outputImage = imageResult?.url || fallbackImages[Math.floor(Math.random() * fallbackImages.length)];
+      
+      // Now analyze the generated image to get final token details
+      if (outputImage) {
+        const imageData = {
+          embeds: [{
+            url: outputImage,
+            metadata: {
+              content_type: 'image/jpeg'
+            }
+          }]
+        };
+        
+        const imageTokenDetails = await analyzeImage(imageData);
+        if (imageTokenDetails) {
+          // Use the image-based token details instead
+          tokenDetails = imageTokenDetails;
+          console.log('Updated token details from image analysis:', tokenDetails);
+        }
+      }
 
       // Capitalize the name before using it
       const capitalizedName = tokenDetails.name
@@ -523,9 +565,6 @@ async function handleMention(fid, replyToHash, castText, parentHash, mentionedPr
         .map(word => word.charAt(0).toUpperCase() + word.slice(1))
         .join(' ');
       tokenDetails.name = capitalizedName;
-
-      const imageResult = await findRelevantImage(tokenDetails.name, description);
-      outputImage = imageResult?.url || fallbackImages[Math.floor(Math.random() * fallbackImages.length)];
       
       // Modify message to include the description
       message = targetUsername

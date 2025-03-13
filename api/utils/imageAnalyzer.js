@@ -47,31 +47,40 @@ async function url_to_base64(imageUrl) {
     }
 }
 
-async function generateImageSearchTerms(description) {
+async function generateImageSearchTerms(base64Image, mediaType) {
     const result = await retryWithDelay(async () => {
-        const promptContent = `
-        Given this description of an image:
-        "${description}"
-        
-        Provide 2-3 funny, slightly roasting search terms that would find a humorous image on Imgur.
-        Think of terms that playfully tease what is in the image - like what you'd search to find a reaction gif 
-        that pokes fun at the described traits.
-        
-        Rules:
-        - Output ONLY the search terms
-        - Put each term on its own line with a line break between terms
-        - Terms should be funny/memey but SFW
-        - Terms should directly relate to key elements in the image
-        - Do not use these words: Degen, crypto, avatar, vibe, vibes, obscure, incoherent, obvious, coherent, quirky, blockchain, wild, blonde, anon, clanker, obscure, pot, base, mfer, mfers, stoner, weed, based, glonk, glonky, bot, simple, roast, dog, invest, buy, purchase, frames, quirky, meme, milo, memecoin, Doge, Pepe.
-        - Each term can be 1 or 2 words
-        - Use only the english alphabet`;
+        const promptContent = `You are a pro crypto degen that is coming up with degenerate memecoin names. Each name should be based and rip into the image.
+
+Given this image, Provide 2-3 names. it should be funny and obscure.
+
+Rules:
+- Output ONLY the names
+- Each term should be 1 single word but can be 2 on occasion
+- Put each term on its own line with a line break between terms
+- Terms should be SFW
+- Terms should directly relate to key elements in the image
+- Do not use these words: Degen, crypto, avatar, vibe, vibes, obscure, incoherent, obvious, coherent, quirky, blockchain, wild, blonde, anon, clanker, obscure, pot, base, mfer, mfers, stoner, weed, based, glonk, glonky, bot, simple, roast, dog, invest, buy, purchase, frames, quirky, meme, milo, memecoin, Doge, Pepe.
+- Use only the english alphabet`;
 
         const message = await anthropic.messages.create({
             model: "claude-3-sonnet-20240229",
             max_tokens: 100,
             messages: [{
                 role: "user",
-                content: promptContent
+                content: [
+                    { 
+                        type: "image", 
+                        source: { 
+                            type: "base64", 
+                            media_type: mediaType, 
+                            data: base64Image 
+                        }
+                    },
+                    { 
+                        type: "text", 
+                        text: promptContent 
+                    }
+                ]
             }]
         });
 
@@ -94,7 +103,7 @@ async function generateImageSearchTerms(description) {
     return result;
 }
 
-async function generateImageTokenDetails(description, searchTerms) {
+async function generateImageTokenDetails(searchTerms) {
     const result = await retryWithDelay(async () => {
         // First select the most memeable term
         const promptContent = `Given these potential terms:
@@ -173,53 +182,18 @@ export async function analyzeImage(castData) {
         }
         console.log('Successfully converted image to base64');
 
-        // Get initial description from Claude with retry
-        const response = await retryWithDelay(async () => {
-            const result = await anthropic.messages.create({
-                model: "claude-3-sonnet-20240229",
-                max_tokens: 1000,
-                messages: [{
-                    role: "user",
-                    content: [
-                        { type: "image", source: { type: "base64", media_type: mediaType, data: base64Image }},
-                        { type: "text", text: `Describe this image's most striking or humorous element in 1-2 sentences.
-                            Focus on visual elements that could be used for a meme.
-                            Be specific about what makes it funny or memorable.
-                            
-                            Rules:
-                            - Output only the description
-                            - Focus on visual elements
-                            - Be specific and detailed
-                            - Keep it light and humorous
-                            - Use simple language` 
-                        }
-                    ]
-                }]
-            });
-
-            // Validate response
-            if (!result?.content?.[0]?.text) {
-                throw new Error('Invalid response format from Claude');
-            }
-
-            return result;
-        });
-
-        const imageDescription = response.content[0].text.trim();
-        console.log('Generated image description:', imageDescription);
-
-        // Generate search terms from the description with retry
+        // Generate search terms directly from image
         const searchTerms = await retryWithDelay(async () => {
-            const terms = await generateImageSearchTerms(imageDescription);
+            const terms = await generateImageSearchTerms(base64Image, mediaType);
             if (!terms || terms.length === 0) {
                 throw new Error('No valid search terms generated');
             }
             return terms;
         });
 
-        // Generate final token details with retry
+        // Generate final token details
         const tokenDetails = await retryWithDelay(async () => {
-            const details = await generateImageTokenDetails(imageDescription, searchTerms);
+            const details = await generateImageTokenDetails(searchTerms);
             if (!details?.name || !details?.ticker) {
                 throw new Error('Invalid token details generated');
             }
@@ -231,7 +205,7 @@ export async function analyzeImage(castData) {
         return {
             name: tokenDetails.name,
             ticker: tokenDetails.ticker,
-            imageUrl: imageEmbed.url  // Return the original image URL
+            imageUrl: imageEmbed.url
         };
 
     } catch (error) {
