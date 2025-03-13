@@ -49,16 +49,16 @@ async function url_to_base64(imageUrl) {
 
 async function generateImageSearchTerms(base64Image, mediaType) {
     const result = await retryWithDelay(async () => {
-        const promptContent = `You are a pro crypto degen that is coming up with degenerate memecoin names. Each name should be based and rip into the image.
+        const promptContent = `You are a pro crypto degen that is coming up with degenerate memecoin names.
 
 Given this image, Provide 2-3 names. it should be funny and obscure.
 
 Rules:
-- Output ONLY the names
-- Each term should be 1 single word but can be 2 on occasion
-- Put each term on its own line with a line break between terms
-- Terms should be SFW
-- Terms should directly relate to key elements in the image
+- Output ONLY the names. Nothing more.
+- Each name should be 1 single word but can be 2 on occasion
+- Put each name on its own line with a line break between terms
+- Names should be SFW
+- Names should directly relate to key elements in the image
 - Do not use these words: Degen, crypto, avatar, vibe, vibes, obscure, incoherent, obvious, coherent, quirky, blockchain, wild, blonde, anon, clanker, obscure, pot, base, mfer, mfers, stoner, weed, based, glonk, glonky, bot, simple, roast, dog, invest, buy, purchase, frames, quirky, meme, milo, memecoin, Doge, Pepe.
 - Use only the english alphabet`;
 
