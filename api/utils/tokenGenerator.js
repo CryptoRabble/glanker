@@ -190,14 +190,14 @@ export async function generateTokenDetails(description, isSingleCast = false) {
       const [firstWord, secondWord] = name.split(' ');
       const combinedLength = firstWord.length + secondWord.length;
       
-      if (combinedLength < 12) {
-        // If combined words are less than 12 letters, combine them
+      if (combinedLength < 25) {
+        // If combined words are less than 25 letters, combine them
         ticker = (firstWord + secondWord).toUpperCase();
       } else {
         // For longer combinations, use first 4 of first word + first 3 of second
         ticker = (firstWord.slice(0, 4) + secondWord.slice(0, 3)).toUpperCase();
       }
-    } else if (name.length < 15) {
+    } else if (name.length < 25) {
       // If one word less than 15 letters, use the whole word
       ticker = name.toUpperCase();
     } else {
