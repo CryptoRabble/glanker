@@ -134,21 +134,22 @@ async function generateImageTokenDetails(searchTerms) {
         // Generate ticker from the selected name
         let ticker;
         if (name.includes(' ')) {
-            // If two words, handle based on first word length
+            // If two words, use the longer word
             const [firstWord, secondWord] = name.split(' ');
-            if (firstWord.length > 7) {
-                // For long first words, combine first 4 letters of first word and first 3 of second
-                ticker = (firstWord.slice(0, 4) + secondWord.slice(0, 3)).toUpperCase();
+            if (firstWord.length > 15) {
+                // For long first words, combine first 10 letters of first word and first 3 of second
+                ticker = (firstWord.slice(0, 10) + secondWord.slice(0, 3)).toUpperCase();
             } else {
-                // Otherwise, use the first word as before
-                ticker = firstWord.toUpperCase();
+                // Use the longer of the two words
+                const longerWord = firstWord.length >= secondWord.length ? firstWord : secondWord;
+                ticker = longerWord.toUpperCase();
             }
-        } else if (name.length < 7) {
-            // If one word less than 7 letters, use the whole word
+        } else if (name.length < 20) {
+            // If one word less than 20 letters, use the whole word
             ticker = name.toUpperCase();
         } else {
-            // If more than 7 letters, use first six + last letter
-            ticker = (name.slice(0, 6) + name.slice(-1)).toUpperCase();
+            // If more than 20 letters, use first ten + last letter
+            ticker = (name.slice(0, 10) + name.slice(-1)).toUpperCase();
         }
 
         return {
